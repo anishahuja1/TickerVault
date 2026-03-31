@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useWatchlist } from "../context/WatchlistContext";
 
-const WS_URL = "ws://localhost:8000/api/v1/ws/prices";
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const WS_URL = API_URL.replace(/^http/, 'ws') + '/api/v1/ws/prices';
 const RECONNECT_DELAY = 5000;
 
 export default function useWebSocket() {
