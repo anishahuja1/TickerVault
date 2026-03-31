@@ -5,18 +5,8 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: "dist",
-    sourcemap: false,      // disable sourcemaps in production
-    minify: "esbuild",
+    sourcemap: false,
     chunkSizeWarningLimit: 1000,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor:   ["react", "react-dom", "react-router-dom"],
-          charts:   ["recharts"],
-          ui:       ["lucide-react"],
-        },
-      },
-    },
   },
   server: {
     port: 5174,
