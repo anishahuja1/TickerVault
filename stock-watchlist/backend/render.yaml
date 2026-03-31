@@ -19,4 +19,4 @@ services:
       - key: FRONTEND_URL
         sync: false          # Set to your Vercel URL after deploying frontend
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: 3.12.0
