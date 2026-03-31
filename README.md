@@ -34,15 +34,18 @@ git push -u origin main
 1. Go to https://supabase.com → Sign up free
 2. Click "New Project"
    - Name: `tickervault`
-   - Password: create a strong password (save it!)
+   - Password: create a strong database password (save it!)
    - Region: pick closest to you
 3. Wait ~2 minutes for project to start
-4. Go to: Settings → Database → Connection String → URI
-5. Copy the URI — it looks like:
-   `postgresql://postgres:[YOUR-PASSWORD]@db.abcdefgh.supabase.co:5432/postgres`
-6. Save this — you need it in Step 3
+4. Click the **"Connect"** button (top-right of your project dashboard)
+5. Select the **"Connection string"** tab
+6. Copy the **URL** — it looks like:
+   `postgresql://postgres.[PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres`
+7. **Replace `[YOUR-PASSWORD]`** in the URI with the database password you set in step 2
+8. Save this — you need it in Step 3
 
 > Supabase free tier: 500MB storage, 2 projects, no credit card needed.
+> **Tip:** If you can't find the Connect button, go to **Project Settings** (gear icon in sidebar) → **Database** → scroll down to **Connection string**.
 
 ---
 

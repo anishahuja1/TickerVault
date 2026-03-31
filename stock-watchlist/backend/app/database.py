@@ -1,7 +1,10 @@
 """
 TickerVault — Async Database Layer.
 
-Uses SQLAlchemy 2.0 async engine with aiosqlite for non-blocking DB access.
+Uses SQLAlchemy 2.0 async engine.
+  • Local dev:  aiosqlite  (sqlite+aiosqlite://...)
+  • Production: asyncpg    (postgresql+asyncpg://...)
+Auto-detects from DATABASE_URL.
 """
 
 from sqlalchemy.ext.asyncio import (
@@ -15,8 +18,19 @@ from .config import get_settings
 
 settings = get_settings()
 
+# Convert standard postgresql:// to async driver format
+db_url = settings.DATABASE_URL
+if db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+elif db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+
+# Remove pgbouncer param if present (asyncpg handles pooling itself)
+if "?pgbouncer=true" in db_url:
+    db_url = db_url.replace("?pgbouncer=true", "")
+
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    db_url,
     echo=False,
     future=True,
 )
