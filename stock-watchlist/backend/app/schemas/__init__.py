@@ -1,0 +1,1 @@
+"""TickerVault — Pydantic Schemas (DTOs)."""

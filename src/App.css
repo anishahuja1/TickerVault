@@ -1,0 +1,147 @@
+/* ============================================
+   App Layout
+   ============================================ */
+.app-main {
+  flex: 1;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+/* Loading overlay */
+.app-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--accent-cyan);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Footer */
+.app-footer {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.app-footer a {
+  color: var(--accent-cyan);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.app-footer a:hover {
+  color: var(--accent-purple);
+}
+
+/* Market status banner */
+.market-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1.5rem;
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.market-banner .banner-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.market-banner.market-open .banner-dot {
+  background: var(--positive);
+  box-shadow: 0 0 6px var(--positive);
+}
+
+.market-banner.market-closed .banner-dot {
+  background: var(--negative);
+}
+
+/* ── Auth Loading ─────────────────────────────────────────────────────── */
+
+.app-auth-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 1rem;
+  color: var(--text-muted);
+}
+
+.app-auth-loading .loading-spinner {
+  width: 32px;
+  height: 32px;
+}
+
+/* ── View Tabs ────────────────────────────────────────────────────────── */
+
+.view-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 1.25rem;
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
+  padding: 3px;
+  border-radius: 10px;
+  width: fit-content;
+}
+
+.view-tab {
+  padding: 0.55rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.view-tab:hover {
+  color: var(--text-primary);
+}
+
+.view-tab.active {
+  background: rgba(6, 182, 212, 0.12);
+  color: #06b6d4;
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.1);
+}
+
+.tab-badge {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 9999px;
+  background: rgba(6, 182, 212, 0.15);
+  color: #06b6d4;
+  font-weight: 700;
+}

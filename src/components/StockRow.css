@@ -1,0 +1,164 @@
+.stock-row {
+  transition: background 0.3s ease;
+}
+
+.stock-row:hover {
+  background: var(--surface-elevated);
+}
+
+/* Flash animations */
+.stock-row.flash-green {
+  animation: flash-positive 0.8s ease;
+}
+
+.stock-row.flash-red {
+  animation: flash-negative 0.8s ease;
+}
+
+@keyframes flash-positive {
+  0% { background: rgba(16, 185, 129, 0.2); }
+  100% { background: transparent; }
+}
+
+@keyframes flash-negative {
+  0% { background: rgba(239, 68, 68, 0.2); }
+  100% { background: transparent; }
+}
+
+.stock-row td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+  font-size: 0.88rem;
+}
+
+/* Ticker column */
+.ticker-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.ticker-symbol {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+.ticker-name {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Price column */
+.col-price {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  position: relative;
+}
+
+.price-value {
+  transition: color 0.3s ease;
+}
+
+.price-updating .price-value {
+  color: var(--accent-cyan);
+}
+
+.live-indicator {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.4rem;
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--positive);
+  box-shadow: 0 0 6px var(--positive);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Change columns */
+.col-change,
+.col-change-pct {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.col-change.positive,
+.col-change-pct.positive {
+  color: var(--positive);
+}
+
+.col-change.negative,
+.col-change-pct.negative {
+  color: var(--negative);
+}
+
+.change-arrow {
+  font-size: 0.65rem;
+  margin-right: 0.3rem;
+}
+
+/* High / Low / Volume */
+.col-high,
+.col-low {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.col-volume {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Remove button */
+.col-actions {
+  text-align: center;
+}
+
+.remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.remove-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--negative);
+  transform: scale(1.1);
+}
+
+/* Responsive: hide some columns on small screens */
+@media (max-width: 768px) {
+  .col-high,
+  .col-low,
+  .col-volume {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .col-change {
+    display: none;
+  }
+  .ticker-name {
+    max-width: 100px;
+  }
+}
