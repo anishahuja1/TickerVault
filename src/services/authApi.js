@@ -4,7 +4,8 @@
  * Handles JWT token storage and auth API calls.
  */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const RAW_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = RAW_URL.replace(/\/+$/, '');
 const API_BASE = `${API_URL}/api/v1`;
 const TOKEN_KEY = 'tickervault_token';
 const USER_KEY = 'tickervault_user';

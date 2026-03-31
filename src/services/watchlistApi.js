@@ -4,7 +4,8 @@
 
 import { getToken } from './authApi';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const RAW_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = RAW_URL.replace(/\/+$/, '');
 const API_BASE = `${API_URL}/api/v1`;
 
 async function authFetch(path, options = {}) {
