@@ -70,7 +70,11 @@ export async function register(username, email, password) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || 'Registration failed');
+    let message = err.detail || 'Registration failed';
+    if (Array.isArray(message)) {
+      message = message.map(m => m.msg).join(', ');
+    }
+    throw new Error(message);
   }
 
   const data = await res.json();
@@ -88,7 +92,11 @@ export async function login(username, password) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || 'Login failed');
+    let message = err.detail || 'Login failed';
+    if (Array.isArray(message)) {
+      message = message.map(m => m.msg).join(', ');
+    }
+    throw new Error(message);
   }
 
   const data = await res.json();
