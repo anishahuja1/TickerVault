@@ -56,10 +56,17 @@ export function useWatchlist() {
           }
           setStockData(mapped);
         }
-      } catch (error) {
-        console.error('Failed to load watchlist:', error);
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          console.error('Server is starting up, please wait 30 seconds and try again.');
+        } else if (err.message === 'Failed to fetch') {
+          console.error('Cannot connect to server. Check your internet connection.');
+        } else {
+          console.error(err.message || 'Something went wrong. Please try again.');
+        }
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     fetchWatchlist();

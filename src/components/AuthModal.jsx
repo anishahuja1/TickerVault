@@ -39,9 +39,16 @@ export default function AuthModal() {
         await login(username, password);
       }
     } catch (err) {
-      setError(err.message || 'Something went wrong');
+      if (err.name === 'AbortError') {
+        setError('Server is starting up, please wait 30 seconds and try again.');
+      } else if (err.message === 'Failed to fetch') {
+        setError('Cannot connect to server. Check your internet connection.');
+      } else {
+        setError(err.message || 'Something went wrong. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const switchMode = () => {

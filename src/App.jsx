@@ -25,8 +25,8 @@ function isMarketOpen() {
 export default function App() {
   // Wake up backend on load (Render cold start)
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    fetch(`${apiUrl}/health`).catch(() => {});
+    fetch(`${import.meta.env.VITE_API_URL}/health`, { method: "GET" })
+      .catch(() => {}); // silent — just wakes Render from sleep
   }, []);
 
   const { isAuthenticated, isLoading: authLoading, user, logout } = useAuth();

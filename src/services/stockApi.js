@@ -12,16 +12,27 @@ const API_BASE = `${API_URL}/api/v1`;
 
 async function apiFetch(path) {
   const token = getToken();
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `API error: ${res.status}`);
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      signal: controller.signal,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `API error: ${res.status}`);
+    }
+
+    return res.json();
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
   }
-
-  return res.json();
 }
 
 // ── Search ───────────────────────────────────────────────────────────────

@@ -11,6 +11,7 @@ Production-grade application factory with:
 """
 
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request, status
@@ -81,6 +82,9 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+# Get frontend URL from env, default to production
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://ticker-vault.vercel.app")
+
 
 # ── Middleware ────────────────────────────────────────────────────────────
 
@@ -93,13 +97,36 @@ app.add_middleware(
     allow_origins=[
         "https://ticker-vault.vercel.app",
         "https://tickervault.vercel.app",
+        FRONTEND_URL,
         "http://localhost:5173",
         "http://localhost:3000",
+        "http://localhost:8000",
     ],
+    allow_origin_regex=r"https://ticker-vault-.*\.vercel\.app",
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
+
+
+# ── CORS Preflight Safety Net ─────────────────────────────────────────────
+
+@app.options("/{rest_of_path:path}")
+async def preflight_handler(rest_of_path: str, request: Request):
+    """
+    Manual safety net for CORS preflight requests (OPTIONS).
+    Ensures headers are returned even if the path isn't specifically defined yet.
+    """
+    return JSONResponse(
+        content={"message": "OK"},
+        headers={
+            "Access-Control-Allow-Origin": request.headers.get("origin", "*"),
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Credentials": "true",
+        }
+    )
 
 
 # ── Global Exception Handlers ────────────────────────────────────────────

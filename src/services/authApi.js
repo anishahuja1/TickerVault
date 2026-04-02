@@ -89,9 +89,6 @@ export async function register(username, email, password) {
     return data;
   } catch (err) {
     clearTimeout(timeoutId);
-    if (err.name === 'AbortError') {
-      throw new Error('Server is waking up, please try again in 30 seconds.');
-    }
     throw err;
   }
 }
@@ -125,9 +122,6 @@ export async function login(username, password) {
     return data;
   } catch (err) {
     clearTimeout(timeoutId);
-    if (err.name === 'AbortError') {
-      throw new Error('Server is waking up, please try again in 30 seconds.');
-    }
     throw err;
   }
 }

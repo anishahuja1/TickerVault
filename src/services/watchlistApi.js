@@ -9,23 +9,34 @@ const API_BASE = `${API_URL.replace(/\/+$/, '')}/api/v1`;
 
 async function authFetch(path, options = {}) {
   const token = getToken();
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `API error: ${res.status}`);
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...options.headers,
+      },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `API error: ${res.status}`);
+    }
+
+    // Handle empty responses (DELETE)
+    const text = await res.text();
+    return text ? JSON.parse(text) : {};
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
   }
-
-  // Handle empty responses (DELETE)
-  const text = await res.text();
-  return text ? JSON.parse(text) : {};
 }
 
 export async function getWatchlist() {
