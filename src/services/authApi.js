@@ -4,8 +4,9 @@
  * Handles JWT token storage and auth API calls.
  */
 
-const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+const API_URL = (import.meta.env.VITE_API_URL || 'https://tickervault-api.onrender.com').replace(/\/+$/, '');
 const API_BASE = `${API_URL}/api/v1`;
+console.log('Auth API Base:', API_BASE);
 const TOKEN_KEY = 'tickervault_token';
 const USER_KEY = 'tickervault_user';
 
@@ -65,7 +66,9 @@ export async function register(username, email, password) {
   const timeoutId = setTimeout(() => controller.abort(), 15000);
 
   try {
-    const res = await fetch(`${API_BASE}/auth/register`, {
+    const url = `${API_BASE}/auth/register`;
+    console.log('Calling:', url);
+    const res = await fetch(url, {
       method: 'POST',
       signal: controller.signal,
       headers: { 'Content-Type': 'application/json' },
@@ -98,7 +101,9 @@ export async function login(username, password) {
   const timeoutId = setTimeout(() => controller.abort(), 15000);
 
   try {
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    const url = `${API_BASE}/auth/login`;
+    console.log('Calling:', url);
+    const res = await fetch(url, {
       method: 'POST',
       signal: controller.signal,
       headers: { 'Content-Type': 'application/json' },
@@ -134,7 +139,9 @@ export async function fetchMe() {
   const timeoutId = setTimeout(() => controller.abort(), 15000);
 
   try {
-    const res = await fetch(`${API_BASE}/auth/me`, {
+    const url = `${API_BASE}/auth/me`;
+    console.log('Calling:', url);
+    const res = await fetch(url, {
       signal: controller.signal,
       headers: { Authorization: `Bearer ${token}` },
     });

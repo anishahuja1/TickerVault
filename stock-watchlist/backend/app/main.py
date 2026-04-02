@@ -114,14 +114,11 @@ app.add_middleware(
 
 @app.options("/{rest_of_path:path}")
 async def preflight_handler(rest_of_path: str, request: Request):
-    """
-    Manual safety net for CORS preflight requests (OPTIONS).
-    Ensures headers are returned even if the path isn't specifically defined yet.
-    """
+    origin = request.headers.get("origin", "*")
     return JSONResponse(
         content={"message": "OK"},
         headers={
-            "Access-Control-Allow-Origin": request.headers.get("origin", "*"),
+            "Access-Control-Allow-Origin": origin,
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
             "Access-Control-Allow-Headers": "*",
             "Access-Control-Allow-Credentials": "true",

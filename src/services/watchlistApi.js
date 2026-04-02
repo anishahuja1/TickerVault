@@ -4,8 +4,9 @@
 
 import { getToken } from './authApi';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
-const API_BASE = `${API_URL.replace(/\/+$/, '')}/api/v1`;
+const API_URL = (import.meta.env.VITE_API_URL || 'https://tickervault-api.onrender.com').replace(/\/+$/, '');
+const API_BASE = `${API_URL}/api/v1`;
+console.log('Watchlist API Base:', API_BASE);
 
 async function authFetch(path, options = {}) {
   const token = getToken();
@@ -13,7 +14,9 @@ async function authFetch(path, options = {}) {
   const timeoutId = setTimeout(() => controller.abort(), 15000);
 
   try {
-    const res = await fetch(`${API_BASE}${path}`, {
+    const url = `${API_BASE}${path}`;
+    console.log('Calling:', url);
+    const res = await fetch(url, {
       ...options,
       signal: controller.signal,
       headers: {

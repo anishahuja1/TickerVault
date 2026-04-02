@@ -27,4 +27,3 @@ dist/
 Thumbs.db
 
 # Docker
-*.env.production

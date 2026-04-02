@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useWatchlist } from "../context/WatchlistContext";
 
-const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+const API_URL = (import.meta.env.VITE_API_URL || 'https://tickervault-api.onrender.com').replace(/\/+$/, '');
 const WS_URL = API_URL.replace(/^http/, 'ws') + '/api/v1/ws/prices';
+console.log('WS URL (useWebSocket):', WS_URL);
 const RECONNECT_DELAY = 5000;
 
 export default function useWebSocket() {

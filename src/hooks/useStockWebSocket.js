@@ -9,8 +9,10 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { getToken } from '../services/authApi';
 
 const getWsUrl = () => {
-  const apiUrl = import.meta.env.VITE_API_URL || '';
-  return `${apiUrl.replace(/\/+$/, '').replace(/^http/, 'ws')}/api/v1/ws/prices`;
+  const apiUrl = import.meta.env.VITE_API_URL || 'https://tickervault-api.onrender.com';
+  const url = `${apiUrl.replace(/\/+$/, '').replace(/^http/, 'ws')}/api/v1/ws/prices`;
+  console.log('WS URL (useStockWebSocket):', url);
+  return url;
 };
 const RECONNECT_INTERVALS = [1000, 2000, 4000, 8000, 16000, 30000];
 

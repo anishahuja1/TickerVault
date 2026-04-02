@@ -23,9 +23,12 @@ function isMarketOpen() {
 }
 
 export default function App() {
+  console.log("API URL (App):", import.meta.env.VITE_API_URL);
+
   // Wake up backend on load (Render cold start)
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/health`, { method: "GET" })
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://tickervault-api.onrender.com';
+    fetch(`${apiUrl}/health`, { method: "GET" })
       .catch(() => {}); // silent — just wakes Render from sleep
   }, []);
 
