@@ -30,7 +30,7 @@ async function authFetch(path, options = {}) {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || `API error: ${res.status}`);
+      throw new Error(err.msg || err.detail || `API error: ${res.status}`);
     }
 
     // Handle empty responses (DELETE)

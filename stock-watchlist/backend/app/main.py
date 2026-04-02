@@ -126,6 +126,26 @@ async def preflight_handler(rest_of_path: str, request: Request):
     )
 
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Catch-all for internal server errors.
+    CRITICAL: Adds CORS headers so the error is visible to the frontend.
+    """
+    logging.error(f"Internal Server Error: {str(exc)}", exc_info=True)
+    origin = request.headers.get("origin", "*")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error", "msg": str(exc)},
+        headers={
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Credentials": "true",
+        }
+    )
+
+
 # ── Global Exception Handlers ────────────────────────────────────────────
 # Maps domain exceptions → HTTP status codes (decoupled architecture)
 

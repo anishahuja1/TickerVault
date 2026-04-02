@@ -79,7 +79,7 @@ export async function register(username, email, password) {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      let message = err.detail || 'Registration failed';
+      let message = err.msg || err.detail || 'Request failed';
       if (Array.isArray(message)) {
         message = message.map((m) => m.msg).join(', ');
       }
