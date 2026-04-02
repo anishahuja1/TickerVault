@@ -84,15 +84,18 @@ app = FastAPI(
 
 # ── Middleware ────────────────────────────────────────────────────────────
 
+# Add RequestLoggingMiddleware FIRST so it runs AFTER CORSMiddleware
+app.add_middleware(RequestLoggingMiddleware)
+
+# Add CORSMiddleware LAST so it wraps the entire app, running the outermost
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_origin_regex=".*",  # Allow any origin natively (e.g. Vercel previews) while supporting credentials
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.add_middleware(RequestLoggingMiddleware)
 
 
 # ── Global Exception Handlers ────────────────────────────────────────────
