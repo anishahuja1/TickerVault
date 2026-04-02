@@ -166,13 +166,23 @@ EXCEPTION_STATUS_MAP = {
 
 @app.exception_handler(TickerVaultError)
 async def tickervault_exception_handler(request: Request, exc: TickerVaultError):
-    """Convert domain exceptions to HTTP responses."""
+    """
+    Handle domain-specific errors.
+    CRITICAL: Adds CORS headers so the error is visible to the frontend.
+    """
     status_code = EXCEPTION_STATUS_MAP.get(
         type(exc), status.HTTP_500_INTERNAL_SERVER_ERROR
     )
+    origin = request.headers.get("origin", "*")
     return JSONResponse(
         status_code=status_code,
-        content={"detail": exc.message},
+        content={"detail": exc.message, "error_type": type(exc).__name__},
+        headers={
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Credentials": "true",
+        }
     )
 
 
