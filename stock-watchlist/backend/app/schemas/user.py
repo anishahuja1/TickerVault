@@ -6,14 +6,23 @@ Pydantic models for user registration, login, and profile responses.
 
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class UserCreate(BaseModel):
     """Schema for user registration."""
     username: str = Field(..., min_length=3, max_length=50, pattern=r"^[a-zA-Z0-9_]+$")
     email: EmailStr
-    password: str = Field(..., min_length=8, max_length=128)
+    password: str = Field(..., min_length=8)
+
+    @field_validator("password")
+    @classmethod
+    def password_must_be_valid(cls, v):
+        if len(v.encode("utf-8")) > 72:
+            raise ValueError(
+                "Password is too long. Please use a password under 72 bytes."
+            )
+        return v
 
 
 class UserLogin(BaseModel):

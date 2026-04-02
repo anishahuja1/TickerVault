@@ -21,15 +21,29 @@ router = APIRouter()
 async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
     """
     Register a new user account.
-
     Returns a JWT token on success — the user is immediately logged in.
     """
-    service = AuthService(db)
-    return await service.register(
-        username=data.username,
-        email=data.email,
-        password=data.password,
-    )
+    try:
+        service = AuthService(db)
+        return await service.register(
+            username=data.username,
+            email=data.email,
+            password=data.password,
+        )
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        # Catch all unexpected errors — log them but return clean message
+        print(f"[ERROR] Register failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Registration failed due to a server error. Please try again."
+        )
 
 
 @router.post("/login", response_model=TokenResponse)

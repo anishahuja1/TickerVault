@@ -62,6 +62,12 @@ export function hasValidToken() {
 // ── Auth API Calls ───────────────────────────────────────────────────────
 
 export async function register(username, email, password) {
+  // Frontend-side password length check (72 bytes for bcrypt)
+  const passwordBytes = new TextEncoder().encode(password);
+  if (passwordBytes.length > 72) {
+    throw new Error('Password must be 72 bytes or fewer.');
+  }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000);
 
@@ -78,12 +84,9 @@ export async function register(username, email, password) {
     clearTimeout(timeoutId);
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      let message = err.msg || err.detail || 'Request failed';
-      if (Array.isArray(message)) {
-        message = message.map((m) => m.msg).join(', ');
-      }
-      throw new Error(message);
+      const errorData = await res.json().catch(() => ({}));
+      const message = errorData.detail || errorData.msg || errorData.message || `Error ${res.status}: Registration failed`;
+      throw new Error(Array.isArray(message) ? message.map(m => m.msg || m).join(', ') : message);
     }
 
     const data = await res.json();

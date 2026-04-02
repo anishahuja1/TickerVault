@@ -29,6 +29,15 @@ export default function AuthModal() {
           setIsSubmitting(false);
           return;
         }
+        
+        // Add frontend password length check (72 bytes for bcrypt)
+        const passwordBytes = new TextEncoder().encode(password);
+        if (passwordBytes.length > 72) {
+          setError('Password must be 72 characters or fewer.');
+          setIsSubmitting(false);
+          return;
+        }
+
         await register(username, email, password);
       } else {
         if (!username || !password) {
