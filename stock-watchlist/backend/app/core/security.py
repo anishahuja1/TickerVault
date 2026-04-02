@@ -14,17 +14,27 @@ from passlib.context import CryptContext
 from ..config import get_settings
 
 # bcrypt context — industry standard for password hashing
+# We use bcrypt specifically. If passwords exceed 72 bytes, 
+# some backends fail; passlib handles this if configured.
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
-    """Hash a plaintext password using bcrypt."""
-    return pwd_context.hash(password)
+    """
+    Hash a plaintext password using bcrypt.
+    Bcrypt has a 72-byte limit; we truncate to ensure it never crashes.
+    """
+    truncated = password.encode("utf-8")[:72].decode("utf-8", "ignore")
+    return pwd_context.hash(truncated)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a plaintext password against a bcrypt hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    """
+    Verify a plaintext password against a bcrypt hash.
+    Truncate plain_password to 72 bytes to match the hashing logic.
+    """
+    truncated = plain_password.encode("utf-8")[:72].decode("utf-8", "ignore")
+    return pwd_context.verify(truncated, hashed_password)
 
 
 def validate_password_strength(password: str) -> tuple[bool, str]:
