@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     FINNHUB_API_KEY: str = ""
 
     # ── CORS ──────────────────────────────────────────────────────────────
-    FRONTEND_URL: str = "http://localhost:5173,http://localhost:5174"
+    FRONTEND_URL: str = "http://localhost:5173,http://localhost:3000,https://ticker-vault.vercel.app,https://tickervault.vercel.app"
 
     @property
     def CORS_ORIGINS(self) -> list[str]:

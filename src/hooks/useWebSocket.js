@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useWatchlist } from "../context/WatchlistContext";
 
-const RAW_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const API_URL = RAW_URL.replace(/\/+$/, '');
+const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 const WS_URL = API_URL.replace(/^http/, 'ws') + '/api/v1/ws/prices';
 const RECONNECT_DELAY = 5000;
 

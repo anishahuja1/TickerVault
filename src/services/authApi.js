@@ -4,8 +4,7 @@
  * Handles JWT token storage and auth API calls.
  */
 
-const RAW_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const API_URL = RAW_URL.replace(/\/+$/, '');
+const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 const API_BASE = `${API_URL}/api/v1`;
 const TOKEN_KEY = 'tickervault_token';
 const USER_KEY = 'tickervault_user';
@@ -62,63 +61,102 @@ export function hasValidToken() {
 // ── Auth API Calls ───────────────────────────────────────────────────────
 
 export async function register(username, email, password) {
-  const res = await fetch(`${API_BASE}/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, email, password }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    let message = err.detail || 'Registration failed';
-    if (Array.isArray(message)) {
-      message = message.map(m => m.msg).join(', ');
+  try {
+    const res = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password }),
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      let message = err.detail || 'Registration failed';
+      if (Array.isArray(message)) {
+        message = message.map((m) => m.msg).join(', ');
+      }
+      throw new Error(message);
     }
-    throw new Error(message);
-  }
 
-  const data = await res.json();
-  setToken(data.access_token);
-  setStoredUser(data.user);
-  return data;
+    const data = await res.json();
+    setToken(data.access_token);
+    setStoredUser(data.user);
+    return data;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Server is waking up, please try again in 30 seconds.');
+    }
+    throw err;
+  }
 }
 
 export async function login(username, password) {
-  const res = await fetch(`${API_BASE}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    let message = err.detail || 'Login failed';
-    if (Array.isArray(message)) {
-      message = message.map(m => m.msg).join(', ');
+  try {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      let message = err.detail || 'Login failed';
+      if (Array.isArray(message)) {
+        message = message.map((m) => m.msg).join(', ');
+      }
+      throw new Error(message);
     }
-    throw new Error(message);
-  }
 
-  const data = await res.json();
-  setToken(data.access_token);
-  setStoredUser(data.user);
-  return data;
+    const data = await res.json();
+    setToken(data.access_token);
+    setStoredUser(data.user);
+    return data;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Server is waking up, please try again in 30 seconds.');
+    }
+    throw err;
+  }
 }
 
 export async function fetchMe() {
   const token = getToken();
   if (!token) return null;
 
-  const res = await fetch(`${API_BASE}/auth/me`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-  if (!res.ok) {
-    clearAuth();
-    return null;
+  try {
+    const res = await fetch(`${API_BASE}/auth/me`, {
+      signal: controller.signal,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      clearAuth();
+      return null;
+    }
+
+    const user = await res.json();
+    setStoredUser(user);
+    return user;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    return null; // Silent fail for initial check
   }
-
-  const user = await res.json();
-  setStoredUser(user);
-  return user;
 }

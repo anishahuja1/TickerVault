@@ -9,8 +9,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { getToken } from '../services/authApi';
 
 const getWsUrl = () => {
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  return `${apiUrl.replace(/^http/, 'ws')}/api/v1/ws/prices`;
+  const apiUrl = import.meta.env.VITE_API_URL || '';
+  return `${apiUrl.replace(/\/+$/, '').replace(/^http/, 'ws')}/api/v1/ws/prices`;
 };
 const RECONNECT_INTERVALS = [1000, 2000, 4000, 8000, 16000, 30000];
 

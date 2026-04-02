@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Header from './components/Header';
 import SearchBar from './components/SearchBar';
 import WatchlistTable from './components/WatchlistTable';
@@ -23,6 +23,12 @@ function isMarketOpen() {
 }
 
 export default function App() {
+  // Wake up backend on load (Render cold start)
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    fetch(`${apiUrl}/health`).catch(() => {});
+  }, []);
+
   const { isAuthenticated, isLoading: authLoading, user, logout } = useAuth();
   const { watchlist, stockData, addTicker, removeTicker, isLoading } = useWatchlist();
 

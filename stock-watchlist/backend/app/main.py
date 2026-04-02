@@ -90,8 +90,12 @@ app.add_middleware(RequestLoggingMiddleware)
 # Add CORSMiddleware LAST so it wraps the entire app, running the outermost
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_origin_regex=".*",  # Allow any origin natively (e.g. Vercel previews) while supporting credentials
+    allow_origins=[
+        "https://ticker-vault.vercel.app",
+        "https://tickervault.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
