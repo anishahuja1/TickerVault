@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import DeclarativeBase
 
+import os
 from .config import get_settings
 
 settings = get_settings()
@@ -32,13 +33,23 @@ if "?pgbouncer=true" in db_url:
 engine = create_async_engine(
     db_url,
     echo=False,
-    future=True,
+    pool_size=5,
+    max_overflow=10,
+    pool_pre_ping=True,        # Test connection before using it
+    pool_recycle=300,          # Recycle connections every 5 minutes
+    connect_args={
+        "server_settings": {
+            "application_name": "tickervault"
+        }
+    }
 )
 
 async_session_factory = async_sessionmaker(
     engine,
     class_=AsyncSession,
     expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
 )
 
 

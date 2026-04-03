@@ -78,15 +78,28 @@ export async function register(username, email, password) {
       method: 'POST',
       signal: controller.signal,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password }),
+      body: JSON.stringify({
+        username: username.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+      }),
     });
 
     clearTimeout(timeoutId);
 
     if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      const message = errorData.detail || errorData.msg || errorData.message || `Error ${res.status}: Registration failed`;
-      throw new Error(Array.isArray(message) ? message.map(m => m.msg || m).join(', ') : message);
+      let errorMessage = `Server error (${res.status})`;
+      try {
+        const errorData = await res.json();
+        if (errorData.detail) {
+          errorMessage = Array.isArray(errorData.detail)
+            ? errorData.detail.map((e) => e.msg || e).join(', ')
+            : String(errorData.detail);
+        }
+      } catch (_) {
+        // Fallback for non-JSON responses
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await res.json();

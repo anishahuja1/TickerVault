@@ -14,13 +14,15 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .api.v1 import v1_router
 from .api.websocket import router as ws_router
 from .config import get_settings
+from .core.dependencies import get_db
 from .core.middleware import RequestLoggingMiddleware
 from .database import close_db, init_db
 from .exceptions import (
@@ -203,3 +205,14 @@ async def health_check():
         "app": settings.APP_NAME,
         "version": settings.APP_VERSION,
     }
+
+
+@app.get("/debug/db", tags=["System"])
+async def debug_db(db: AsyncSession = Depends(get_db)):
+    """Isolation test for database connectivity (Render diagnostic)."""
+    try:
+        from sqlalchemy import text
+        result = await db.execute(text("SELECT 1"))
+        return {"db": "connected", "result": result.scalar()}
+    except Exception as e:
+        return {"db": "error", "detail": str(e)}
