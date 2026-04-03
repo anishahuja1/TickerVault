@@ -6,7 +6,7 @@ POST /api/v1/auth/login    — Login and get JWT token
 GET  /api/v1/auth/me       — Get current user profile
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...core.dependencies import get_current_user, get_db
@@ -19,6 +19,8 @@ from ...repositories.user_repository import UserRepository
 import logging
 
 logger = logging.getLogger(__name__)
+
+router = APIRouter()
 
 @router.post("/register", response_model=TokenResponse, status_code=201)
 async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
