@@ -86,35 +86,42 @@ export default function StockChart({ ticker }) {
     // Initialize Chart (Hardware Accelerated Canvas)
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: "#1a1d2e" },
-        textColor: "#9ca3af",
+        background: { type: ColorType.Solid, color: "transparent" },
+        textColor: "#94a3b8",
+        fontSize: 12,
+        fontFamily: "'Inter', sans-serif",
       },
       grid: {
-        vertLines: { color: "#2a2d3e" },
-        horzLines: { color: "#2a2d3e" },
+        vertLines: { color: "rgba(255, 255, 255, 0.03)" },
+        horzLines: { color: "rgba(255, 255, 255, 0.03)" },
       },
       crosshair: {
-        mode: 0, // CrosshairMode.Normal - classic stock style
+        mode: 0,
+        vertLine: { color: "#14b8a6", labelBackgroundColor: "#14b8a6" },
+        horzLine: { color: "#14b8a6", labelBackgroundColor: "#14b8a6" },
       },
       rightPriceScale: {
-        borderColor: "#2a2d3e",
+        borderColor: "rgba(255, 255, 255, 0.08)",
         autoScale: true,
       },
       timeScale: {
-        borderColor: "#2a2d3e",
+        borderColor: "rgba(255, 255, 255, 0.08)",
         timeVisible: true,
         secondsVisible: false,
+      },
+      handleScale: {
+        axisPressedMouseMove: true,
       },
     });
 
     // Add Candlestick Series
     const candleSeries = chart.addCandlestickSeries({
-      upColor: "#00D4AA",
-      downColor: "#FF4757",
-      borderUpColor: "#00D4AA",
-      borderDownColor: "#FF4757",
-      wickUpColor: "#00D4AA",
-      wickDownColor: "#FF4757",
+      upColor: "#14b8a6",
+      downColor: "#ef4444",
+      borderUpColor: "#14b8a6",
+      borderDownColor: "#ef4444",
+      wickUpColor: "#14b8a6",
+      wickDownColor: "#ef4444",
     });
 
     if (chartData && chartData.length > 0) {
@@ -144,55 +151,38 @@ export default function StockChart({ ticker }) {
     };
   }, [chartData]);
 
-  if (!ticker) {
-    return (
-      <div style={{
-        background: "#242736",
-        borderRadius: 12,
-        height: 400,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#4b5563",
-        fontSize: 14,
-      }}>
-        Click a stock to view its real-time candlestick chart
-      </div>
-    );
-  }
-
   const isPositive = !meta || meta.change >= 0;
-  const accentColor = isPositive ? "#00D4AA" : "#FF4757";
+  const accentColor = isPositive ? "#14b8a6" : "#ef4444";
 
   return (
-    <div style={{ background: "#242736", borderRadius: 12, padding: "24px", marginTop: 24 }}>
+    <div className="chart-container-modern glass" style={{ padding: "1.5rem", borderRadius: "16px" }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h2 style={{ color: "#fff", fontSize: 18, fontWeight: 600, margin: 0 }}>{ticker}</h2>
+          <h3 style={{ color: "var(--text-primary)", fontSize: "1.1rem", fontWeight: 700, margin: 0 }}>Market Trend</h3>
           {meta && !isLoading && (
-            <p style={{ color: accentColor, fontSize: 13, marginTop: 4, fontWeight: 500 }}>
-              {isPositive ? "▲" : "▼"} ${Math.abs(meta.change).toFixed(2)} ({isPositive ? "+" : ""}{meta.changePct.toFixed(2)}%) this period
+            <p style={{ color: accentColor, fontSize: "0.85rem", marginTop: "0.25rem", fontWeight: 600 }}>
+              {isPositive ? "▲" : "▼"} ${Math.abs(meta.change).toFixed(2)} ({isPositive ? "+" : ""}{meta.changePct.toFixed(2)}%)
             </p>
           )}
         </div>
 
         {/* Period tabs */}
-        <div style={{ display: "flex", gap: 4, background: "#1a1d2e", borderRadius: 8, padding: 4 }}>
+        <div className="period-pill-group" style={{ display: "flex", gap: "4px", background: "rgba(0,0,0,0.2)", borderRadius: "999px", padding: "4px" }}>
           {PERIODS.map(p => (
             <button
               key={p.value}
               onClick={() => setPeriod(p.value)}
               style={{
-                padding: "6px 14px",
-                borderRadius: 6,
+                padding: "0.4rem 1rem",
+                borderRadius: "999px",
                 border: "none",
                 cursor: "pointer",
-                fontSize: 13,
-                fontWeight: 500,
-                background: period === p.value ? "#00D4AA" : "transparent",
-                color: period === p.value ? "#000" : "#6b7280",
-                transition: "all 0.15s",
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                background: period === p.value ? "var(--accent)" : "transparent",
+                color: period === p.value ? "#000" : "var(--text-muted)",
+                transition: "all 0.2s",
               }}
             >
               {p.label}
@@ -238,23 +228,23 @@ export default function StockChart({ ticker }) {
 
       {/* Footer stats */}
       {!isLoading && !error && meta && chartData.length > 0 && (
-        <div style={{
+        <div className="chart-stats-grid" style={{
           display: "grid",
           gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 16,
-          marginTop: 20,
-          paddingTop: 16,
-          borderTop: "1px solid #2a2d3e",
+          gap: "1rem",
+          marginTop: "1.5rem",
+          paddingTop: "1.5rem",
+          borderTop: "1px solid var(--border-subtle)",
         }}>
           {[
-            { label: "Period Open",  value: chartData[0]?.open,                    color: "#9ca3af" },
-            { label: "Period Close", value: chartData[chartData.length - 1]?.close, color: accentColor },
-            { label: "Period High",  value: meta.high,                              color: "#00D4AA" },
-            { label: "Period Low",   value: meta.low,                               color: "#FF4757" },
+            { label: "Open",   value: chartData[0]?.open,                    color: "var(--text-muted)" },
+            { label: "Close",  value: chartData[chartData.length - 1]?.close, color: accentColor },
+            { label: "High",   value: meta.high,                              color: "var(--positive)" },
+            { label: "Low",    value: meta.low,                               color: "var(--negative)" },
           ].map(stat => (
             <div key={stat.label}>
-              <p style={{ color: "#4b5563", fontSize: 11, marginBottom: 4 }}>{stat.label}</p>
-              <p style={{ color: stat.color, fontSize: 14, fontWeight: 600 }}>
+              <p style={{ color: "var(--text-muted)", fontSize: "0.7rem", textTransform: "uppercase", marginBottom: "0.25rem", fontWeight: 700 }}>{stat.label}</p>
+              <p style={{ color: stat.color, fontSize: "0.95rem", fontWeight: 700 }}>
                 ${Number(stat.value ?? 0).toFixed(2)}
               </p>
             </div>

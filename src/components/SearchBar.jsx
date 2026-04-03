@@ -97,81 +97,63 @@ export default function SearchBar({ onAddTicker, watchlist }) {
   }, []);
 
   return (
-    <div className="search-container">
-      <div className="search-input-wrapper">
-        <svg className="search-icon" viewBox="0 0 20 20" fill="currentColor">
-          <path
-            fillRule="evenodd"
-            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-            clipRule="evenodd"
-          />
+    <div className="modern-search-box">
+      <div className="search-field-wrap glass">
+        <svg className="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
         </svg>
         <input
           ref={inputRef}
-          id="ticker-search"
           type="text"
-          className="search-input"
-          placeholder="Search tickers... (e.g., AAPL, TSLA, MSFT)"
+          className="search-input-field"
+          placeholder="Search markets..."
           value={query}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           autoComplete="off"
         />
-        {isLoading && <div className="search-spinner"></div>}
+        {isLoading && <div className="spinner-sm"></div>}
         {query && !isLoading && (
-          <button
-            className="search-clear"
-            onClick={() => {
-              setQuery('');
-              setResults([]);
-              setIsOpen(false);
-              inputRef.current?.focus();
-            }}
-            aria-label="Clear search"
-          >
+          <button className="clear-search-btn" onClick={() => { setQuery(''); setResults([]); setIsOpen(false); }}>
             ✕
           </button>
         )}
       </div>
 
-      {isOpen && results.length > 0 && (
-        <ul className="search-dropdown" ref={dropdownRef} role="listbox">
-          {results.map((ticker, index) => {
-            const isWatched = watchedTickers.has(ticker.ticker);
-            return (
-              <li
-                key={ticker.ticker}
-                className={`search-result ${index === activeIndex ? 'active' : ''} ${isWatched ? 'watched' : ''}`}
-                onClick={() => !isWatched && handleSelect(ticker)}
-                onMouseEnter={() => setActiveIndex(index)}
-                role="option"
-                aria-selected={index === activeIndex}
-              >
-                <div className="result-info">
-                  <span className="result-ticker">{ticker.ticker}</span>
-                  <span className="result-name">{ticker.name}</span>
+      {isOpen && (
+        <div className="search-results-popover glass" ref={dropdownRef}>
+          {results.length > 0 ? (
+            results.map((ticker, index) => {
+              const isWatched = watchedTickers.has(ticker.ticker);
+              return (
+                <div
+                  key={ticker.ticker}
+                  className={`suggestion-item ${index === activeIndex ? 'active' : ''} ${isWatched ? 'watched' : ''}`}
+                  onClick={() => !isWatched && handleSelect(ticker)}
+                  onMouseEnter={() => setActiveIndex(index)}
+                >
+                  <div className="sug-left">
+                    <span className="sug-ticker">{ticker.ticker}</span>
+                    <span className="sug-name">{ticker.name}</span>
+                  </div>
+                  <div className="sug-right">
+                     {isWatched ? (
+                       <span className="sug-badge watched">Watching</span>
+                     ) : (
+                       <span className="sug-badge add">+ Add</span>
+                     )}
+                  </div>
                 </div>
-                <div className="result-meta">
-                  {ticker.primary_exchange && (
-                    <span className="result-exchange">{ticker.primary_exchange}</span>
-                  )}
-                  {isWatched ? (
-                    <span className="result-badge watched-badge">Watching</span>
-                  ) : (
-                    <span className="result-badge add-badge">+ Add</span>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-
-      {isOpen && results.length === 0 && !isLoading && query.length > 0 && (
-        <div className="search-dropdown" ref={dropdownRef}>
-          <div className="search-no-results">
-            <span>No tickers found for "{query}"</span>
-          </div>
+              );
+            })
+          ) : (
+            !isLoading && query.length > 0 && (
+              <div className="search-no-results">
+                <span>No tickers found for "{query}"</span>
+              </div>
+            )
+          )}
         </div>
       )}
     </div>

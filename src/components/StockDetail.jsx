@@ -40,119 +40,116 @@ export default function StockDetail({ ticker, onClose }) {
   const isPositive = (quote?.change || 0) >= 0;
 
   return (
-    <div className="stock-detail-overlay" onClick={onClose}>
-      <div className="stock-detail-panel" onClick={(e) => e.stopPropagation()}>
+    <div className="modern-drawer-overlay" onClick={onClose}>
+      <div className="modern-drawer glass" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="sd-header">
-          <div className="sd-header-left">
-            <h2 className="sd-ticker">{ticker}</h2>
-            {company && <span className="sd-name">{company.name}</span>}
+        <header className="drawer-header">
+          <div className="header-info">
+            <h2 className="drawer-symbol">{ticker}</h2>
+            <p className="drawer-company-name">{company?.name || 'Loading data...'}</p>
           </div>
-          {quote && (
-            <div className="sd-price-block">
-              <span className="sd-price">${quote.price?.toFixed(2)}</span>
-              <span className={`sd-change ${isPositive ? 'positive' : 'negative'}`}>
-                {isPositive ? '+' : ''}{quote.change?.toFixed(2)} ({isPositive ? '+' : ''}{quote.change_percent?.toFixed(2)}%)
-              </span>
+          <div className="header-pricing">
+             {quote && (
+               <>
+                 <span className="drawer-price">${quote.price?.toFixed(2)}</span>
+                 <span className={`drawer-change ${isPositive ? 'pos' : 'neg'}`}>
+                    {isPositive ? '↑' : '↓'} {Math.abs(quote.change_percent || 0).toFixed(2)}%
+                 </span>
+               </>
+             )}
+          </div>
+          <button className="drawer-close-btn" onClick={onClose}>✕</button>
+        </header>
+
+        {/* Tab Controls */}
+        <nav className="drawer-tabs">
+          <button 
+            className={`drawer-tab-btn ${activeTab === 'chart' ? 'active' : ''}`}
+            onClick={() => setActiveTab('chart')}
+          >
+            Performance
+          </button>
+          <button 
+            className={`drawer-tab-btn ${activeTab === 'about' ? 'active' : ''}`}
+            onClick={() => setActiveTab('about')}
+          >
+            Insights
+          </button>
+          <button 
+            className={`drawer-tab-btn ${activeTab === 'news' ? 'active' : ''}`}
+            onClick={() => setActiveTab('news')}
+          >
+            Market News
+          </button>
+        </nav>
+
+        {/* Dynamic Content Area */}
+        <div className="drawer-body">
+          {activeTab === 'chart' && (
+            <div className="chart-view-wrap">
+              <StockChart ticker={ticker} />
+              
+              <div className="snapshot-grid">
+                <div className="snapshot-card">
+                  <span className="label">Open</span>
+                  <span className="value">${quote?.open?.toFixed(2)}</span>
+                </div>
+                <div className="snapshot-card">
+                  <span className="label">Range</span>
+                  <span className="value">${quote?.low?.toFixed(2)} - ${quote?.high?.toFixed(2)}</span>
+                </div>
+                <div className="snapshot-card">
+                  <span className="label">Volume</span>
+                  <span className="value">{(quote?.volume || 0).toLocaleString()}</span>
+                </div>
+                <div className="snapshot-card">
+                  <span className="label">Mkt Cap</span>
+                  <span className="value">{formatMarketCap(quote?.market_cap)}</span>
+                </div>
+              </div>
             </div>
           )}
-          <button className="sd-close" onClick={onClose} title="Close">✕</button>
-        </div>
 
-        {/* Tab Bar */}
-        <div className="sd-tabs">
-          {['chart', 'about', 'news'].map((tab) => (
-            <button
-              key={tab}
-              className={`sd-tab ${activeTab === tab ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab)}
-            >
-              {tab === 'chart' ? '📊 Chart' : tab === 'about' ? '🏢 About' : '📰 News'}
-            </button>
-          ))}
-        </div>
-
-        {/* Content */}
-        <div className="sd-content">
-          {activeTab === 'chart' && (
-            <>
-              <StockChart ticker={ticker} />
-              {quote && (
-                <div className="sd-stats-grid">
-                  <div className="sd-stat">
-                    <span className="sd-stat-label">Open</span>
-                    <span className="sd-stat-value">${quote.open?.toFixed(2)}</span>
-                  </div>
-                  <div className="sd-stat">
-                    <span className="sd-stat-label">High</span>
-                    <span className="sd-stat-value">${quote.high?.toFixed(2)}</span>
-                  </div>
-                  <div className="sd-stat">
-                    <span className="sd-stat-label">Low</span>
-                    <span className="sd-stat-value">${quote.low?.toFixed(2)}</span>
-                  </div>
-                  <div className="sd-stat">
-                    <span className="sd-stat-label">Prev Close</span>
-                    <span className="sd-stat-value">${quote.previous_close?.toFixed(2)}</span>
-                  </div>
-                  <div className="sd-stat">
-                    <span className="sd-stat-label">Volume</span>
-                    <span className="sd-stat-value">{(quote.volume || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="sd-stat">
-                    <span className="sd-stat-label">Mkt Cap</span>
-                    <span className="sd-stat-value">{formatMarketCap(quote.market_cap)}</span>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          {activeTab === 'about' && company && (
-            <div className="sd-about">
-              <div className="sd-about-tags">
-                {company.sector && <span className="sd-tag">{company.sector}</span>}
-                {company.industry && <span className="sd-tag">{company.industry}</span>}
-                {company.country && <span className="sd-tag">{company.country}</span>}
+          {activeTab === 'about' && (
+            <div className="about-view">
+              <div className="sector-tag-row">
+                 {company?.sector && <span className="sector-pill">{company.sector}</span>}
+                 {company?.industry && <span className="industry-pill">{company.industry}</span>}
               </div>
-              {company.description && (
-                <p className="sd-description">{company.description}</p>
-              )}
-              <div className="sd-about-details">
-                {company.website && (
-                  <a href={company.website} target="_blank" rel="noopener noreferrer" className="sd-website">
-                    🔗 {company.website}
-                  </a>
+              <p className="company-description">{company?.description || 'Corporate profile unavailable for this ticker.'}</p>
+              
+              <div className="corporate-details">
+                {company?.website && (
+                  <div className="detail-row">
+                    <span className="label">Official Website</span>
+                    <a href={company.website} target="_blank" rel="noopener noreferrer" className="link">{company.website.replace(/^https?:\/\//, '')}</a>
+                  </div>
                 )}
-                {company.employees > 0 && (
-                  <p className="sd-employees">👥 {company.employees.toLocaleString()} employees</p>
+                {company?.employees && (
+                   <div className="detail-row">
+                    <span className="label">Workforce</span>
+                    <span className="value">{company.employees.toLocaleString()} Professionals</span>
+                  </div>
                 )}
               </div>
             </div>
           )}
 
           {activeTab === 'news' && (
-            <div className="sd-news">
+            <div className="news-feed">
               {news.length === 0 ? (
-                <p className="sd-empty">No recent news</p>
+                <div className="empty-news">No recent coverage for {ticker}.</div>
               ) : (
-                news.map((article, i) => (
-                  <a
-                    key={i}
-                    href={article.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="sd-news-item"
-                  >
-                    {article.image && (
-                      <img src={article.image} alt="" className="sd-news-img" />
-                    )}
-                    <div className="sd-news-text">
-                      <h4>{article.title}</h4>
-                      <span className="sd-news-meta">
-                        {article.source}
-                        {article.published_at && ` · ${new Date(article.published_at).toLocaleDateString()}`}
-                      </span>
+                news.map((item, idx) => (
+                  <a key={idx} href={item.url} target="_blank" rel="noopener noreferrer" className="news-card glass">
+                    {item.image && <img src={item.image} alt="" className="news-thumb" />}
+                    <div className="news-info">
+                      <h4 className="news-title">{item.title}</h4>
+                      <div className="news-meta">
+                        <span className="source">{item.source}</span>
+                        <span className="dot">·</span>
+                        <span className="date">{new Date(item.published_at).toLocaleDateString()}</span>
+                      </div>
                     </div>
                   </a>
                 ))

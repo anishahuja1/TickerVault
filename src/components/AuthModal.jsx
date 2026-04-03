@@ -30,7 +30,6 @@ export default function AuthModal() {
           return;
         }
         
-        // Add frontend password length check (72 bytes for bcrypt)
         const passwordBytes = new TextEncoder().encode(password);
         if (passwordBytes.length > 72) {
           setError('Password must be 72 characters or fewer.');
@@ -60,120 +59,105 @@ export default function AuthModal() {
     }
   };
 
-  const switchMode = () => {
-    setMode((m) => (m === 'login' ? 'register' : 'login'));
-    setError('');
-  };
-
   return (
-    <div className="auth-overlay">
-      <div className="auth-card">
-        {/* Logo */}
-        <div className="auth-logo">
-          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="48" height="48" rx="12" fill="url(#tv-grad)" fillOpacity="0.15" />
-            <path d="M14 28l6-8 6 4 8-10" stroke="url(#tv-stroke)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            <circle cx="14" cy="28" r="2" fill="#06b6d4" />
-            <circle cx="20" cy="20" r="2" fill="#8b5cf6" />
-            <circle cx="26" cy="24" r="2" fill="#10b981" />
-            <circle cx="34" cy="14" r="2" fill="#f59e0b" />
-            <defs>
-              <linearGradient id="tv-grad" x1="0" y1="0" x2="48" y2="48">
-                <stop stopColor="#06b6d4" /><stop offset="1" stopColor="#8b5cf6" />
-              </linearGradient>
-              <linearGradient id="tv-stroke" x1="14" y1="14" x2="34" y2="28">
-                <stop stopColor="#06b6d4" /><stop offset="1" stopColor="#10b981" />
-              </linearGradient>
-            </defs>
-          </svg>
+    <div className="auth-page">
+      {/* Decorative Orbs handled in index.css body::before/after */}
+      
+      <div className="auth-container">
+        <div className="auth-brand">
+          <div className="auth-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 17l6-6 4 4 8-8" />
+              <circle cx="3" cy="17" r="1.5" fill="currentColor" stroke="none" />
+              <circle cx="21" cy="9" r="1.5" fill="currentColor" stroke="none" />
+            </svg>
+          </div>
+          <h1 className="auth-main-title text-gradient">TickerVault</h1>
+          <p className="auth-tagline">Real-time stock tracking, beautifully simple</p>
         </div>
 
-        <h2 className="auth-title">TickerVault</h2>
-        <p className="auth-subtitle">
-          {mode === 'login'
-            ? 'Sign in to your stock dashboard'
-            : 'Create your free account'}
-        </p>
-
-        {/* Tab Switcher */}
-        <div className="auth-tabs">
-          <button
-            className={`auth-tab ${mode === 'login' ? 'active' : ''}`}
-            onClick={() => { setMode('login'); setError(''); }}
-          >
-            Sign In
-          </button>
-          <button
-            className={`auth-tab ${mode === 'register' ? 'active' : ''}`}
-            onClick={() => { setMode('register'); setError(''); }}
-          >
-            Register
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="auth-field">
-            <label htmlFor="auth-username">Username</label>
-            <input
-              id="auth-username"
-              type="text"
-              placeholder="Enter username"
-              value={username}
-              onChange={(e) => { setUsername(e.target.value); setError(''); }}
-              autoComplete="username"
-              autoFocus
-            />
+        <div className="auth-card glass">
+          {/* Tab Switcher */}
+          <div className="auth-mode-pill">
+            <button 
+              type="button"
+              className={mode === 'login' ? 'active' : ''} 
+              onClick={() => { setMode('login'); setError(''); }}
+            >
+              Sign In
+            </button>
+            <button 
+              type="button"
+              className={mode === 'register' ? 'active' : ''} 
+              onClick={() => { setMode('register'); setError(''); }}
+            >
+              Register
+            </button>
           </div>
 
-          {mode === 'register' && (
-            <div className="auth-field">
-              <label htmlFor="auth-email">Email</label>
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="auth-input-group">
+              <label>Username</label>
               <input
-                id="auth-email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); setError(''); }}
-                autoComplete="email"
+                type="text"
+                placeholder="Ex. ticker_king"
+                value={username}
+                onChange={(e) => { setUsername(e.target.value); setError(''); }}
+                autoComplete="username"
+                required
               />
             </div>
-          )}
 
-          <div className="auth-field">
-            <label htmlFor="auth-password">Password</label>
-            <input
-              id="auth-password"
-              type="password"
-              placeholder={mode === 'register' ? 'Min 8 chars, with a digit' : 'Enter password'}
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); setError(''); }}
-              autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-            />
-          </div>
-
-          {error && <p className="auth-error">{error}</p>}
-
-          <button type="submit" className="auth-submit" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <><span className="auth-spinner"></span>Processing...</>
-            ) : mode === 'login' ? (
-              'Sign In'
-            ) : (
-              'Create Account'
+            {mode === 'register' && (
+              <div className="auth-input-group">
+                <label>Email Address</label>
+                <input
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                  autoComplete="email"
+                  required
+                />
+              </div>
             )}
-          </button>
-        </form>
 
-        <p className="auth-switch">
-          {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
-          <button onClick={switchMode} className="auth-switch-btn">
-            {mode === 'login' ? 'Register' : 'Sign In'}
-          </button>
-        </p>
+            <div className="auth-input-group">
+              <label>Password</label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                autoComplete="current-password"
+                required
+              />
+            </div>
 
-        <div className="auth-footer">
-          <p>🔒 Your data is stored securely on the server</p>
+            {error && (
+              <div className="auth-error-card">
+                <span className="error-icon">⚠️</span>
+                <p>{error}</p>
+              </div>
+            )}
+
+            <button type="submit" className="auth-btn-primary" disabled={isSubmitting}>
+              {isSubmitting ? 'Processing...' : mode === 'login' ? 'Access Dashboard' : 'Get Started for Free'}
+            </button>
+          </form>
+
+          <div className="auth-card-footer">
+            <p>
+              {mode === 'login' ? "Don't have an account?" : "Already have an account?"}
+              <button 
+                type="button" 
+                className="auth-link-btn" 
+                onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
+              >
+                {mode === 'login' ? 'Create one now' : 'Sign in here'}
+              </button>
+            </p>
+          </div>
         </div>
       </div>
     </div>

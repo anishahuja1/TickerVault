@@ -60,47 +60,6 @@
 .sd-price {
   display: block;
   font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.sd-change {
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.sd-change.positive { color: #10b981; }
-.sd-change.negative { color: #ef4444; }
-
-.sd-close {
-  width: 36px;
-  height: 36px;
-  border: 1px solid rgba(100, 116, 139, 0.2);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
-  flex-shrink: 0;
-}
-
-.sd-close:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.3);
-}
-
-/* ── Tabs ──────────────────────────────────────────────────────────────── */
-
-.sd-tabs {
-  display: flex;
-  gap: 2px;
-  padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid rgba(100, 116, 139, 0.1);
 }
 
 .sd-tab {

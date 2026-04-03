@@ -1,164 +1,115 @@
-.stock-row {
-  transition: background 0.3s ease;
+.stock-row-item {
+  transition: background 0.2s ease;
+  cursor: pointer;
 }
 
-.stock-row:hover {
-  background: var(--surface-elevated);
+.stock-row-item:hover {
+  background: rgba(255, 255, 255, 0.03);
 }
 
-/* Flash animations */
-.stock-row.flash-green {
-  animation: flash-positive 0.8s ease;
+.symbol-cell {
+  display: flex;
+  flex-direction: column;
 }
 
-.stock-row.flash-red {
-  animation: flash-negative 0.8s ease;
+.symbol-primary {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 1rem;
 }
 
-@keyframes flash-positive {
+.symbol-secondary {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.price-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.price-main {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.live-pill {
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 0.1rem 0.35rem;
+  background: var(--positive-bg);
+  color: var(--positive);
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  animation: pulse-teal 2s infinite;
+}
+
+@keyframes pulse-teal {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* ── Change Badges ───────────────────────────────────────────────────── */
+.change-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.change-badge.pos { background: var(--positive-bg); color: var(--positive); }
+.change-badge.neg { background: var(--negative-bg); color: var(--negative); }
+
+.percent-label {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.percent-label.pos { color: var(--positive); }
+.percent-label.neg { color: var(--negative); }
+
+/* ── Actions ─────────────────────────────────────────────────────────── */
+.row-delete-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 0.8rem;
+}
+
+.row-delete-btn:hover {
+  background: var(--negative-bg);
+  color: var(--negative);
+}
+
+/* ── Flash Effects ───────────────────────────────────────────────────── */
+.flash-up {
+  animation: flash-green-bg 1s ease-out;
+}
+
+.flash-down {
+  animation: flash-red-bg 1s ease-out;
+}
+
+@keyframes flash-green-bg {
   0% { background: rgba(16, 185, 129, 0.2); }
   100% { background: transparent; }
 }
 
-@keyframes flash-negative {
+@keyframes flash-red-bg {
   0% { background: rgba(239, 68, 68, 0.2); }
   100% { background: transparent; }
 }
 
-.stock-row td {
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid var(--border-color);
-  white-space: nowrap;
-  font-size: 0.88rem;
-}
-
-/* Ticker column */
-.ticker-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.ticker-symbol {
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: var(--text-primary);
-  letter-spacing: 0.02em;
-}
-
-.ticker-name {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Price column */
-.col-price {
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-primary);
-  position: relative;
-}
-
-.price-value {
-  transition: color 0.3s ease;
-}
-
-.price-updating .price-value {
-  color: var(--accent-cyan);
-}
-
-.live-indicator {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 0.4rem;
-}
-
-.live-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--positive);
-  box-shadow: 0 0 6px var(--positive);
-  animation: pulse-dot 2s ease-in-out infinite;
-}
-
-/* Change columns */
-.col-change,
-.col-change-pct {
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-secondary);
-}
-
-.col-change.positive,
-.col-change-pct.positive {
-  color: var(--positive);
-}
-
-.col-change.negative,
-.col-change-pct.negative {
-  color: var(--negative);
-}
-
-.change-arrow {
-  font-size: 0.65rem;
-  margin-right: 0.3rem;
-}
-
-/* High / Low / Volume */
-.col-high,
-.col-low {
-  color: var(--text-secondary);
-  font-variant-numeric: tabular-nums;
-}
-
-.col-volume {
-  color: var(--text-secondary);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Remove button */
-.col-actions {
-  text-align: center;
-}
-
-.remove-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.remove-btn:hover {
-  background: rgba(239, 68, 68, 0.15);
-  color: var(--negative);
-  transform: scale(1.1);
-}
-
-/* Responsive: hide some columns on small screens */
-@media (max-width: 768px) {
-  .col-high,
-  .col-low,
-  .col-volume {
-    display: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .col-change {
-    display: none;
-  }
-  .ticker-name {
-    max-width: 100px;
-  }
-}
+.text-right { text-align: right; }
+.text-muted { color: var(--text-muted); }
+.td-ticker { width: 120px; }
+.td-action { width: 48px; text-align: center; }

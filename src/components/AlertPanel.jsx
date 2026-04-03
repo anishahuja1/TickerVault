@@ -55,81 +55,98 @@ export default function AlertPanel({ isOpen, onClose }) {
   const triggered = alerts.filter((a) => a.is_triggered);
 
   return (
-    <div className="alert-panel-overlay" onClick={onClose}>
-      <div className="alert-panel" onClick={(e) => e.stopPropagation()}>
-        <div className="ap-header">
-          <h3>🔔 Price Alerts</h3>
-          <button className="ap-close" onClick={onClose}>✕</button>
-        </div>
+    <div className="modern-dropdown-overlay" onClick={onClose}>
+      <div className="modern-dropdown glass" onClick={(e) => e.stopPropagation()}>
+        <header className="dropdown-header">
+          <div className="header-title">
+             <span className="bell-icon">🔔</span>
+             <h3>Notifications</h3>
+          </div>
+          <button className="dropdown-close-btn" onClick={onClose}>✕</button>
+        </header>
 
-        <div className="ap-actions">
-          <button className="ap-add-btn" onClick={() => setShowForm(!showForm)}>
-            {showForm ? 'Cancel' : '+ New Alert'}
-          </button>
+        <div className="dropdown-actions">
+           <button 
+             className={`btn-toggle-form ${showForm ? 'active' : ''}`}
+             onClick={() => setShowForm(!showForm)}
+           >
+             {showForm ? 'Close Form' : '+ New Price Alert'}
+           </button>
         </div>
 
         {showForm && (
-          <form className="ap-form" onSubmit={handleCreate}>
-            <input
-              type="text"
-              placeholder="Ticker (e.g. AAPL)"
-              value={formTicker}
-              onChange={(e) => setFormTicker(e.target.value.toUpperCase())}
-              required
-            />
-            <select value={formCondition} onChange={(e) => setFormCondition(e.target.value)}>
-              <option value="above">Above ↑</option>
-              <option value="below">Below ↓</option>
-            </select>
-            <input
-              type="number"
-              step="any"
-              placeholder="$0.00"
-              value={formPrice}
-              onChange={(e) => setFormPrice(e.target.value)}
-              required
-            />
-            <button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? '...' : 'Set Alert'}
-            </button>
-          </form>
+          <div className="dropdown-form-wrap glass">
+            <form className="modern-mini-form" onSubmit={handleCreate}>
+              <div className="form-row">
+                <input
+                  type="text"
+                  placeholder="Ticker"
+                  value={formTicker}
+                  onChange={(e) => setFormTicker(e.target.value.toUpperCase())}
+                  required
+                />
+                <select value={formCondition} onChange={(e) => setFormCondition(e.target.value)}>
+                  <option value="above">Above ↑</option>
+                  <option value="below">Below ↓</option>
+                </select>
+              </div>
+              <div className="form-row">
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="Target Price ($)"
+                  value={formPrice}
+                  onChange={(e) => setFormPrice(e.target.value)}
+                  required
+                />
+                <button type="submit" disabled={isSubmitting} className="btn-submit-alert">
+                  {isSubmitting ? '...' : 'Notify Me'}
+                </button>
+              </div>
+            </form>
+          </div>
         )}
 
-        {error && <p className="ap-error">{error}</p>}
+        {error && <div className="mini-error-box">{error}</div>}
 
-        <div className="ap-list">
+        <div className="dropdown-scroll-list">
           {active.length === 0 && triggered.length === 0 ? (
-            <p className="ap-empty">No alerts set. Create one to get notified!</p>
+            <div className="dropdown-empty-state">
+               <p>No active price monitors.</p>
+               <span>Set targets to receive real-time execution alerts.</span>
+            </div>
           ) : (
-            <>
+            <div className="alert-groups">
               {active.map((a) => (
-                <div key={a.id} className="ap-item">
-                  <div className="ap-item-left">
-                    <span className="ap-ticker">{a.ticker}</span>
-                    <span className={`ap-condition ${a.condition}`}>
-                      {a.condition === 'above' ? '↑' : '↓'} ${a.target_price.toFixed(2)}
+                <div key={a.id} className="alert-item">
+                  <div className="alert-info">
+                    <span className="alert-ticker">{a.ticker}</span>
+                    <span className={`alert-trigger-label ${a.condition}`}>
+                      Crossing ${a.target_price.toFixed(2)} {a.condition === 'above' ? '▲' : '▼'}
                     </span>
                   </div>
-                  <button className="ap-delete" onClick={() => handleDelete(a.id)}>✕</button>
+                  <button className="alert-remove-btn" onClick={() => handleDelete(a.id)}>✕</button>
                 </div>
               ))}
+              
               {triggered.length > 0 && (
-                <>
-                  <h4 className="ap-section-title">Triggered</h4>
-                  {triggered.map((a) => (
-                    <div key={a.id} className="ap-item triggered">
-                      <div className="ap-item-left">
-                        <span className="ap-ticker">{a.ticker}</span>
-                        <span className="ap-condition triggered">
-                          ✓ ${a.target_price.toFixed(2)}
-                        </span>
-                      </div>
-                      <button className="ap-delete" onClick={() => handleDelete(a.id)}>✕</button>
-                    </div>
-                  ))}
-                </>
+                <div className="triggered-divider">
+                  <span>Triggered Recently</span>
+                </div>
               )}
-            </>
+
+              {triggered.map((a) => (
+                <div key={a.id} className="alert-item triggered">
+                  <div className="alert-info">
+                    <span className="alert-ticker">{a.ticker}</span>
+                    <span className="alert-trigger-label success">
+                      EXECUTED ${a.target_price.toFixed(2)} ✓
+                    </span>
+                  </div>
+                  <button className="alert-remove-btn" onClick={() => handleDelete(a.id)}>✕</button>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>

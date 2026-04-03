@@ -27,3 +27,6 @@ dist/
 Thumbs.db
 
 # Docker
+
+.vercel
+.env*.local

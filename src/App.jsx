@@ -38,6 +38,7 @@ export default function App() {
   const [activeView, setActiveView] = useState('watchlist'); // 'watchlist' | 'portfolio'
   const [selectedTicker, setSelectedTicker] = useState(null);
   const [showAlerts, setShowAlerts] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Mobile toggle
 
   // Extract ticker symbols for WebSocket
   const tickers = useMemo(() => watchlist.map((w) => w.ticker), [watchlist]);
@@ -65,88 +66,123 @@ export default function App() {
   }
 
   return (
-    <>
-      <Header
-        connectionStatus={connectionStatus}
-        user={user}
-        onLogout={logout}
-        onAlertsClick={() => setShowAlerts(true)}
-        onExport={exportWatchlistCSV}
-      />
-
-      <main className="app-main">
-        {/* Market Status */}
-        <div className={`market-banner ${marketOpen ? 'market-open' : 'market-closed'}`}>
-          <span className="banner-dot"></span>
-          <span>
-            {marketOpen
-              ? 'Market is open — Streaming live data'
-              : 'Market is closed — Showing last available data'}
-          </span>
+    <div className={`app-canvas ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+      {/* ── Sidebar Navigation ───────────────────────────────────────────── */}
+      <aside className={`sidebar glass ${isMobileMenuOpen ? 'visible' : ''}`}>
+        <div className="sidebar-brand">
+          <div className="brand-logo">TV</div>
+          <h2 className="brand-name">TickerVault</h2>
+          <button className="mobile-close-btn" onClick={() => setIsMobileMenuOpen(false)}>✕</button>
         </div>
 
-        {/* View Tabs */}
-        <div className="view-tabs">
-          <button
-            className={`view-tab ${activeView === 'watchlist' ? 'active' : ''}`}
-            onClick={() => setActiveView('watchlist')}
+        <nav className="sidebar-nav">
+          <button 
+            className={`nav-item ${activeView === 'watchlist' ? 'active' : ''}`}
+            onClick={() => { setActiveView('watchlist'); setIsMobileMenuOpen(false); }}
           >
-            📋 Watchlist
-            {watchlist.length > 0 && <span className="tab-badge">{watchlist.length}</span>}
+            <span className="nav-icon">📊</span>
+            <span className="nav-label">Watchlist</span>
           </button>
-          <button
-            className={`view-tab ${activeView === 'portfolio' ? 'active' : ''}`}
-            onClick={() => setActiveView('portfolio')}
+          <button 
+            className={`nav-item ${activeView === 'portfolio' ? 'active' : ''}`}
+            onClick={() => { setActiveView('portfolio'); setIsMobileMenuOpen(false); }}
           >
-            💰 Portfolio
+            <span className="nav-icon">💼</span>
+            <span className="nav-label">Portfolio</span>
+          </button>
+          <button 
+            className={`nav-item ${showAlerts ? 'active' : ''}`}
+            onClick={() => { setShowAlerts(true); setIsMobileMenuOpen(false); }}
+          >
+            <span className="nav-icon">🔔</span>
+            <span className="nav-label">Alerts</span>
+          </button>
+        </nav>
+
+        <div className="sidebar-footer">
+          <div className="user-profile">
+            <div className="user-avatar">{user?.username?.[0]?.toUpperCase() || 'U'}</div>
+            <div className="user-info">
+              <p className="user-name">{user?.username || 'User'}</p>
+              <p className="user-status">Online</p>
+            </div>
+          </div>
+          <button className="logout-btn" onClick={logout}>
+            <span>Log Out</span>
+            <span className="logout-icon">↵</span>
           </button>
         </div>
+      </aside>
 
-        {/* Watchlist View */}
-        {activeView === 'watchlist' && (
-          <>
+      {/* ── Main Content Area ───────────────────────────────────────────── */}
+      <main className="app-viewport">
+        <header className="viewport-header">
+          <button className="mobile-menu-toggle" onClick={() => setIsMobileMenuOpen(true)}>
+            ☰
+          </button>
+          <div className="header-left">
+            <h1 className="welcome-msg">Good morning, {user?.username || 'Trader'} 👋</h1>
+            <div className="status-indicator">
+              <span className={`status-dot ${connectionStatus === 'connected' ? 'online' : 'offline'}`}></span>
+              <span className="status-text">{connectionStatus === 'connected' ? 'Live Stream' : 'Offline'}</span>
+            </div>
+          </div>
+          
+          <div className="header-right">
             <SearchBar onAddTicker={addTicker} watchlist={watchlist} />
+            <button className="export-btn-minimal" onClick={exportWatchlistCSV} title="Export CSV">
+              📥
+            </button>
+          </div>
+        </header>
 
-            {isLoading && (
-              <div className="app-loading">
-                <div className="loading-spinner"></div>
-                <span>Loading watchlist data...</span>
-              </div>
-            )}
+        <div className="viewport-content">
+          {/* Market Status Banner */}
+          <div className={`market-status-pills ${marketOpen ? 'open' : 'closed'}`}>
+             <span className="pill-dot"></span>
+             {marketOpen ? 'Market Open' : 'Market Closed'}
+          </div>
 
-            {watchlist.length > 0 ? (
-              <WatchlistTable
-                watchlist={watchlist}
-                stockData={stockData}
-                priceData={priceData}
-                onRemove={removeTicker}
-                onRowClick={setSelectedTicker}
-              />
-            ) : (
-              !isLoading && <EmptyState />
-            )}
-          </>
-        )}
+          {/* Dynamic Views */}
+          {activeView === 'watchlist' ? (
+            <div className="watchlist-view">
+              {isLoading && (
+                <div className="view-loading">
+                  <div className="loading-spinner"></div>
+                  <span>Syncing watchlist...</span>
+                </div>
+              )}
 
-        {/* Portfolio View */}
-        {activeView === 'portfolio' && <PortfolioPanel />}
+              {watchlist.length > 0 ? (
+                <WatchlistTable
+                  watchlist={watchlist}
+                  stockData={stockData}
+                  priceData={priceData}
+                  onRemove={removeTicker}
+                  onRowClick={setSelectedTicker}
+                />
+              ) : (
+                !isLoading && <EmptyState />
+              )}
+            </div>
+          ) : (
+            <PortfolioPanel />
+          )}
+        </div>
+
+        <footer className="view-footer">
+          <p>© 2026 TickerVault · Modern High-Precision Trading Environment</p>
+        </footer>
       </main>
 
-      {/* Stock Detail Panel */}
+      {/* Overlays */}
       {selectedTicker && (
         <StockDetail
           ticker={selectedTicker}
           onClose={() => setSelectedTicker(null)}
         />
       )}
-
-      {/* Alerts Panel */}
       <AlertPanel isOpen={showAlerts} onClose={() => setShowAlerts(false)} />
-
-      <footer className="app-footer">
-        Powered by <a href="https://finnhub.io" target="_blank" rel="noopener noreferrer">Finnhub</a> &amp; <a href="https://finance.yahoo.com" target="_blank" rel="noopener noreferrer">Yahoo Finance</a> · 
-        TickerVault v1.0
-      </footer>
-    </>
+    </div>
   );
 }
