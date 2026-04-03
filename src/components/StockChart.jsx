@@ -1,14 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import {
-  ComposedChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { createChart, ColorType } from "lightweight-charts";
 import { getStockHistory } from "../services/stockApi";
 
 const PERIODS = [
@@ -19,96 +10,11 @@ const PERIODS = [
   { label: "1Y", value: "1y" },
 ];
 
-// Custom candlestick shape drawn with SVG
-const CandleShape = (props) => {
-  const { x, y, width, height, open, close, high, low, yAxis } = props;
-
-  if (!yAxis || !yAxis.scale || open == null || close == null) return null;
-
-  const yScale    = yAxis.scale;
-  const isGreen   = close >= open;
-  const color     = isGreen ? "#00D4AA" : "#FF4757";
-  const bodyTop   = yScale(Math.max(open, close));
-  const bodyBot   = yScale(Math.min(open, close));
-  const bodyH     = Math.max(Math.abs(bodyBot - bodyTop), 1);
-  const wickX     = x + width / 2;
-  const highY     = yScale(high);
-  const lowY      = yScale(low);
-  const candleW   = Math.max(width * 0.7, 2);
-  const candleX   = x + (width - candleW) / 2;
-
-  return (
-    <g>
-      {/* Upper wick: top of body → high */}
-      <line
-        x1={wickX} y1={bodyTop}
-        x2={wickX} y2={highY}
-        stroke={color}
-        strokeWidth={1.5}
-      />
-      {/* Lower wick: bottom of body → low */}
-      <line
-        x1={wickX} y1={bodyBot}
-        x2={wickX} y2={lowY}
-        stroke={color}
-        strokeWidth={1.5}
-      />
-      {/* Candle body */}
-      <rect
-        x={candleX}
-        y={bodyTop}
-        width={candleW}
-        height={bodyH}
-        fill={isGreen ? color : color}
-        stroke={color}
-        strokeWidth={0.5}
-        opacity={0.9}
-        rx={1}
-      />
-    </g>
-  );
-};
-
-// Custom tooltip shown on hover
-const CandleTooltip = ({ active, payload, label }) => {
-  if (!active || !payload || !payload.length) return null;
-  const d = payload[0]?.payload;
-  if (!d) return null;
-
-  const isGreen = d.close >= d.open;
-
-  return (
-    <div style={{
-      background: "#1a1d2e",
-      border: "1px solid #2a2d3e",
-      borderRadius: 8,
-      padding: "12px 16px",
-      fontSize: 12,
-      minWidth: 160,
-    }}>
-      <p style={{ color: "#9ca3af", marginBottom: 8, fontSize: 11 }}>{label}</p>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px" }}>
-        {[
-          { label: "O", value: d.open,  color: "#9ca3af" },
-          { label: "H", value: d.high,  color: "#00D4AA" },
-          { label: "L", value: d.low,   color: "#FF4757" },
-          { label: "C", value: d.close, color: isGreen ? "#00D4AA" : "#FF4757" },
-        ].map(({ label, value, color }) => (
-          <div key={label} style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-            <span style={{ color: "#6b7280" }}>{label}</span>
-            <span style={{ color, fontWeight: 600 }}>${Number(value).toFixed(2)}</span>
-          </div>
-        ))}
-      </div>
-      {d.volume > 0 && (
-        <p style={{ color: "#6b7280", marginTop: 8, fontSize: 11 }}>
-          Vol: {Number(d.volume).toLocaleString()}
-        </p>
-      )}
-    </div>
-  );
-};
-
+/**
+ * Professional Stock Chart using Lightweight Charts.
+ * Fixes rendering issues by ensuring explicit heights,
+ * data sanitization, and robust cleanup.
+ */
 export default function StockChart({ ticker }) {
   const [period,    setPeriod]    = useState("1mo");
   const [chartData, setChartData] = useState([]);
@@ -116,27 +22,37 @@ export default function StockChart({ ticker }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error,     setError]     = useState(null);
 
+  const chartContainerRef = useRef(null);
+  const chartRef = useRef(null);
+  const seriesRef = useRef(null);
+
+  /**
+   * Sanitizer for Lightweight Charts (Fix 3)
+   * Ensures data is strictly typed, sorted, and uses correct time format.
+   */
+  const sanitizeChartData = useCallback((data) => {
+    if (!data || !data.dates || data.dates.length === 0) return [];
+    
+    return data.dates.map((date, i) => {
+      const timeVal = new Date(date).getTime() / 1000;
+      return {
+        time:  timeVal,
+        open:  parseFloat(data.opens[i]),
+        high:  parseFloat(data.highs[i]),
+        low:   parseFloat(data.lows[i]),
+        close: parseFloat(data.closes[i]),
+      };
+    }).sort((a, b) => a.time - b.time);
+  }, []);
+
   const fetchHistory = useCallback(async () => {
     if (!ticker) return;
     setIsLoading(true);
     setError(null);
-    setChartData([]);
     try {
       const data = await getStockHistory(ticker, period);
-
-      const formatted = data.dates.map((date, i) => ({
-        date:   formatLabel(date, period),
-        open:   data.opens[i],
-        high:   data.highs[i],
-        low:    data.lows[i],
-        close:  data.closes[i],
-        volume: data.volumes?.[i] ?? 0,
-        // Recharts Bar needs a single value for its height calculation
-        // We pass [low, high] as the bar domain so the bar spans that range
-        range:  [data.lows[i], data.highs[i]],
-      }));
-
-      setChartData(formatted);
+      const sanitized = sanitizeChartData(data);
+      setChartData(sanitized);
       setMeta({
         change:    data.period_change,
         changePct: data.period_change_pct,
@@ -144,67 +60,119 @@ export default function StockChart({ ticker }) {
         low:       data.period_low,
       });
     } catch (err) {
-      setError(err?.response?.data?.detail || "Failed to load chart");
+      setError(err?.message || "Failed to load chart");
     } finally {
       setIsLoading(false);
     }
-  }, [ticker, period]);
+  }, [ticker, period, sanitizeChartData]);
 
   useEffect(() => {
     fetchHistory();
   }, [fetchHistory]);
 
-  const formatLabel = (iso, period) => {
-    const d = new Date(iso);
-    if (period === "1d")  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    if (period === "5d")  return d.toLocaleDateString([], { month: "short", day: "numeric" });
-    if (period === "1mo") return d.toLocaleDateString([], { month: "short", day: "numeric" });
-    return d.toLocaleDateString([], { month: "short", year: "2-digit" });
-  };
+  /**
+   * Chart Effect Management (Fix 2)
+   * Handles initialization, data updates, responsiveness, and cleanup.
+   */
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
 
-  const isPositive = !meta || meta.change >= 0;
-  const accentColor = isPositive ? "#00D4AA" : "#FF4757";
+    // Cleanup previous chart instance (Fix 2)
+    if (chartRef.current) {
+      chartRef.current.remove();
+      chartRef.current = null;
+    }
 
-  // Tight Y domain for realistic chart — most important for realism
-  const prices  = chartData.flatMap(d => [d.high, d.low]).filter(Boolean);
-  const minPrice = prices.length ? Math.min(...prices) : 0;
-  const maxPrice = prices.length ? Math.max(...prices) : 0;
-  const pad      = (maxPrice - minPrice) * 0.06 || 1;
-  const yDomain  = [
-    parseFloat((minPrice - pad).toFixed(2)),
-    parseFloat((maxPrice + pad).toFixed(2)),
-  ];
+    // Initialize Chart (Hardware Accelerated Canvas)
+    const chart = createChart(chartContainerRef.current, {
+      layout: {
+        background: { type: ColorType.Solid, color: "#1a1d2e" },
+        textColor: "#9ca3af",
+      },
+      grid: {
+        vertLines: { color: "#2a2d3e" },
+        horzLines: { color: "#2a2d3e" },
+      },
+      crosshair: {
+        mode: 0, // CrosshairMode.Normal - classic stock style
+      },
+      rightPriceScale: {
+        borderColor: "#2a2d3e",
+        autoScale: true,
+      },
+      timeScale: {
+        borderColor: "#2a2d3e",
+        timeVisible: true,
+        secondsVisible: false,
+      },
+    });
+
+    // Add Candlestick Series
+    const candleSeries = chart.addCandlestickSeries({
+      upColor: "#00D4AA",
+      downColor: "#FF4757",
+      borderUpColor: "#00D4AA",
+      borderDownColor: "#FF4757",
+      wickUpColor: "#00D4AA",
+      wickDownColor: "#FF4757",
+    });
+
+    if (chartData && chartData.length > 0) {
+      candleSeries.setData(chartData);
+      chart.timeScale().fitContent();
+    }
+
+    chartRef.current = chart;
+    seriesRef.current = candleSeries;
+
+    // Responsive handling
+    const handleResize = () => {
+      if (chartContainerRef.current && chartRef.current) {
+        chartRef.current.applyOptions({
+          width: chartContainerRef.current.clientWidth,
+        });
+      }
+    };
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+      }
+    };
+  }, [chartData]);
 
   if (!ticker) {
     return (
       <div style={{
         background: "#242736",
         borderRadius: 12,
-        height: 320,
+        height: 400,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         color: "#4b5563",
         fontSize: 14,
       }}>
-        Click a stock to view its candlestick chart
+        Click a stock to view its real-time candlestick chart
       </div>
     );
   }
 
+  const isPositive = !meta || meta.change >= 0;
+  const accentColor = isPositive ? "#00D4AA" : "#FF4757";
+
   return (
     <div style={{ background: "#242736", borderRadius: 12, padding: "24px", marginTop: 24 }}>
-
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h2 style={{ color: "#fff", fontSize: 18, fontWeight: 600, margin: 0 }}>
-            {ticker}
-          </h2>
-          {meta && (
+          <h2 style={{ color: "#fff", fontSize: 18, fontWeight: 600, margin: 0 }}>{ticker}</h2>
+          {meta && !isLoading && (
             <p style={{ color: accentColor, fontSize: 13, marginTop: 4, fontWeight: 500 }}>
-              {isPositive ? "▲" : "▼"} ${Math.abs(meta.change).toFixed(2)} (
-              {isPositive ? "+" : ""}{meta.changePct.toFixed(2)}%) this period
+              {isPositive ? "▲" : "▼"} ${Math.abs(meta.change).toFixed(2)} ({isPositive ? "+" : ""}{meta.changePct.toFixed(2)}%) this period
             </p>
           )}
         </div>
@@ -223,7 +191,7 @@ export default function StockChart({ ticker }) {
                 fontSize: 13,
                 fontWeight: 500,
                 background: period === p.value ? "#00D4AA" : "transparent",
-                color:      period === p.value ? "#000"    : "#6b7280",
+                color: period === p.value ? "#000" : "#6b7280",
                 transition: "all 0.15s",
               }}
             >
@@ -233,16 +201,16 @@ export default function StockChart({ ticker }) {
         </div>
       </div>
 
-      {/* Chart */}
-      {isLoading ? (
-        <div style={{
-          height: 300,
-          background: "#1a1d2e",
-          borderRadius: 8,
-          animation: "pulse 1.5s infinite",
-        }} />
-      ) : error ? (
-        <div style={{ height: 300, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
+      {/* Chart States (Fix 4) */}
+      {isLoading && (
+        <div style={{ height: 400, display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280", background: "#1a1d2e", borderRadius: 8 }}>
+          <div className="loading-spinner" style={{ width: 24, height: 24 }}></div>
+          <span style={{ marginLeft: 12 }}>Loading chart history...</span>
+        </div>
+      )}
+
+      {error && !isLoading && (
+        <div style={{ height: 400, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
           <p style={{ color: "#FF4757", fontSize: 14 }}>{error}</p>
           <button onClick={fetchHistory} style={{
             padding: "8px 20px", borderRadius: 8, border: "1px solid #00D4AA",
@@ -251,52 +219,24 @@ export default function StockChart({ ticker }) {
             Retry
           </button>
         </div>
-      ) : chartData.length === 0 ? (
-        <div style={{ height: 300, display: "flex", alignItems: "center", justifyContent: "center", color: "#4b5563" }}>
-          No data for this period
-        </div>
-      ) : (
-        <ResponsiveContainer width="100%" height={300}>
-          <ComposedChart
-            data={chartData}
-            margin={{ top: 8, right: 8, left: 0, bottom: 4 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e2130" vertical={false} />
-            <XAxis
-              dataKey="date"
-              tick={{ fill: "#4b5563", fontSize: 11 }}
-              tickLine={false}
-              axisLine={false}
-              interval="preserveStartEnd"
-              minTickGap={50}
-            />
-            <YAxis
-              domain={yDomain}
-              tick={{ fill: "#4b5563", fontSize: 11 }}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={v => `$${Number(v).toFixed(0)}`}
-              width={58}
-              orientation="right"
-            />
-            <Tooltip content={<CandleTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
-            <Bar
-              dataKey="range"
-              shape={<CandleShape />}
-              isAnimationActive={false}
-            >
-              {chartData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={entry.close >= entry.open ? "#00D4AA" : "#FF4757"}
-                />
-              ))}
-            </Bar>
-          </ComposedChart>
-        </ResponsiveContainer>
       )}
 
-      {/* Footer stats — Period OHLC */}
+      {!isLoading && !error && chartData.length === 0 && (
+        <div style={{ height: 400, display: "flex", alignItems: "center", justifyContent: "center", color: "#4b5563", background: "#1a1d2e", borderRadius: 8 }}>
+          No chart data available for this symbol
+        </div>
+      )}
+
+      {/* The Chart Container (Fix 1) */}
+      {!isLoading && !error && chartData.length > 0 && (
+        <div 
+          ref={chartContainerRef} 
+          id="tv-candlestick-chart"
+          style={{ width: "100%", height: "400px", borderRadius: 8, overflow: "hidden" }} 
+        />
+      )}
+
+      {/* Footer stats */}
       {!isLoading && !error && meta && chartData.length > 0 && (
         <div style={{
           display: "grid",
