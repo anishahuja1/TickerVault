@@ -32,11 +32,14 @@
 /* ── Base Layer ──────────────────────────────────────────────────────── */
 @layer base {
   *, *::before, *::after {
-    @apply box-border margin-0 padding-0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
   }
   
   html, body {
-    @apply h-full overflow-x-hidden;
+    height: 100%;
+    overflow-x: hidden;
   }
 
   body {
@@ -48,14 +51,18 @@
   }
 
   #root {
-    @apply min-h-screen flex flex-col;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
 }
 
 /* ── Premium Utilities ────────────────────────────────────────────────── */
 @layer utilities {
   .glass-card {
-    @apply bg-bg-surface border border-border-subtle rounded-xl;
+    background-color: var(--color-bg-surface);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 0.75rem;
     backdrop-filter: blur(12px) saturate(180%);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   }
