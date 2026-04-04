@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { searchTickers } from '../services/stockApi';
 
-export default function SearchBar({ onAddTicker, watchlist }) {
+export default function SearchBar({ onAddTicker, onRecordTrade, watchlist }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -125,12 +125,10 @@ export default function SearchBar({ onAddTicker, watchlist }) {
             {results.map((ticker, index) => {
               const isWatched = watchedTickers.has(ticker.ticker);
               return (
-                <button
+                <div
                   key={ticker.ticker}
                   className={`w-full flex items-center justify-between px-5 py-4 border-b border-border-subtle/50 transition-all text-left ${index === activeIndex ? 'bg-bg-surface-elevated text-accent' : 'hover:bg-bg-surface-elevated/50'}`}
-                  onClick={() => !isWatched && handleSelect(ticker)}
                   onMouseEnter={() => setActiveIndex(index)}
-                  disabled={isWatched}
                 >
                   <div className="flex flex-col gap-0.5">
                     <span className={`text-sm font-black tracking-tight ${index === activeIndex ? 'text-accent' : 'text-text-primary'}`}>
@@ -141,14 +139,34 @@ export default function SearchBar({ onAddTicker, watchlist }) {
                     </span>
                   </div>
                   
-                  {isWatched ? (
-                    <span className="text-[10px] font-black uppercase tracking-widest text-positive/60">Watched</span>
-                  ) : (
-                    <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg ${index === activeIndex ? 'bg-accent/10 text-accent' : 'bg-bg-main text-text-muted'}`}>
-                      + Add
-                    </span>
-                  )}
-                </button>
+                  <div className="flex gap-2">
+                    <button
+                      className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all ${index === activeIndex ? 'bg-accent text-[#fff] shadow-lg shadow-accent/20' : 'bg-accent/10 text-accent hover:bg-accent hover:text-[#fff]'}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRecordTrade(ticker);
+                        setQuery('');
+                        setResults([]);
+                        setIsOpen(false);
+                      }}
+                    >
+                      Trade
+                    </button>
+                    {isWatched ? (
+                      <span className="text-[10px] min-w-[70px] text-center font-black uppercase tracking-widest text-positive/60 flex items-center justify-center">Watched</span>
+                    ) : (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelect(ticker);
+                        }}
+                        className={`text-[9px] min-w-[70px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border border-border-subtle hover:bg-bg-surface-elevated transition-colors ${index === activeIndex ? 'text-accent border-accent/30' : 'text-text-muted'}`}
+                      >
+                        + Watch
+                      </button>
+                    )}
+                  </div>
+                </div>
               );
             })}
           </div>

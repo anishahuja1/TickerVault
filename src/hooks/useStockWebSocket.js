@@ -19,6 +19,7 @@ const RECONNECT_INTERVALS = [1000, 2000, 4000, 8000, 16000, 30000];
 export function useStockWebSocket(tickers) {
   const [priceData, setPriceData] = useState({});
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
+  const [lastTriggeredAlert, setLastTriggeredAlert] = useState(null);
 
   const wsRef = useRef(null);
   const reconnectAttempt = useRef(0);
@@ -83,6 +84,11 @@ export function useStockWebSocket(tickers) {
               },
             }));
           }
+        } else if (msg.type === 'alert_triggered') {
+          setLastTriggeredAlert({
+            ...msg.data,
+            timestamp: Date.now()
+          });
         }
       } catch (err) {
         console.error('[WS] Parse error:', err);
@@ -130,5 +136,5 @@ useEffect(() => {
   }, [connect]);
 
   // Status mapping for App.jsx compatibility
-  return { priceData, connectionStatus };
+  return { priceData, connectionStatus, lastTriggeredAlert };
 }

@@ -23,6 +23,7 @@ export default function App() {
   const [selectedTicker, setSelectedTicker] = useState(null);
   const [showAlerts, setShowAlerts] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeToast, setActiveToast] = useState(null);
 
   useEffect(() => {
     if (!selectedTicker && activeView === 'detail') {
@@ -31,7 +32,16 @@ export default function App() {
   }, [selectedTicker, activeView]);
 
   const tickers = useMemo(() => watchlist.map((w) => w.ticker), [watchlist]);
-  const { priceData, connectionStatus } = useStockWebSocket(isAuthenticated ? tickers : []);
+  const { priceData, connectionStatus, lastTriggeredAlert } = useStockWebSocket(isAuthenticated ? tickers : []);
+  
+  useEffect(() => {
+    if (lastTriggeredAlert) {
+      setActiveToast(lastTriggeredAlert);
+      const timer = setTimeout(() => setActiveToast(null), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [lastTriggeredAlert]);
+
   const marketOpen = isMarketOpen();
 
   if (authLoading) {
@@ -189,7 +199,7 @@ export default function App() {
                     isLoading={watchlistLoading}
                 />
                 ) : activeView === 'portfolio' ? (
-                <PortfolioPanel />
+                <PortfolioPanel priceData={priceData} />
                 ) : (
                 <StockDetail
                     ticker={selectedTicker}
@@ -217,6 +227,27 @@ export default function App() {
 
       {/* Global Overlays */}
       <AlertPanel isOpen={showAlerts} onClose={() => setShowAlerts(false)} />
+      {/* ── High Priority Alert Toast ────────────────────────── */}
+      {activeToast && (
+        <div className="fixed top-24 right-6 z-[300] w-full max-w-sm bg-bg-surface-elevated border-2 border-accent border-l-[6px] border-l-accent p-6 rounded-2xl shadow-2xl animate-in slide-in-from-right-10 duration-500 overflow-hidden">
+           <div className="flex justify-between items-start mb-2">
+              <span className="text-[10px] font-black text-accent uppercase tracking-[0.3em]">Execution Trigger Active</span>
+              <button onClick={() => setActiveToast(null)} className="text-text-muted hover:text-text-primary transition-colors">✕</button>
+           </div>
+           <div className="flex items-end gap-3">
+              <h4 className="text-2xl font-black text-text-primary tracking-tighter">{activeToast.ticker}</h4>
+              <span className={`text-xs font-bold mb-1 ${activeToast.condition === 'above' ? 'text-positive' : 'text-negative'}`}>
+                 ${activeToast.target_price.toFixed(2)} {activeToast.condition === 'above' ? '▲' : '▼'}
+              </span>
+           </div>
+           <p className="text-[10px] font-bold text-text-muted mt-2 uppercase tracking-widest opacity-60">Price threshold breached at {new Date(activeToast.timestamp).toLocaleTimeString()}</p>
+           
+           {/* Animated Scanner Glitch Effect */}
+           <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-5">
+              <div className="w-full h-px bg-accent animate-glitch-line" />
+           </div>
+        </div>
+      )}
     </div>
   );
 }

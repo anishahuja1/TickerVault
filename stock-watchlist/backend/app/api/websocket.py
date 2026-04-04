@@ -1,6 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from ..services.auth_service import decode_token
 from ..services.stock_service import StockService
+from ..services.alert_service import AlertService
 from ..database import async_session_factory
 from sqlalchemy import select
 import asyncio
@@ -10,13 +11,24 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["websocket"])
 
 async def get_user_tickers_by_id(db, user_id: int):
-    """Helper: get tickers for a user identified by id."""
+    """Helper: get unique tickers for a user from both watchlist and portfolio."""
     from ..models.watchlist import WatchlistItem
-    result = await db.execute(
-        select(WatchlistItem).where(WatchlistItem.user_id == user_id)
+    from ..models.portfolio import PortfolioTransaction
+    
+    # Get watchlist tickers
+    watchlist_result = await db.execute(
+        select(WatchlistItem.ticker).where(WatchlistItem.user_id == user_id)
     )
-    items = result.scalars().all()
-    return [item.ticker for item in items]
+    watchlist_tickers = watchlist_result.scalars().all()
+    
+    # Get portfolio tickers
+    portfolio_result = await db.execute(
+        select(PortfolioTransaction.ticker).where(PortfolioTransaction.user_id == user_id).distinct()
+    )
+    portfolio_tickers = portfolio_result.scalars().all()
+    
+    # Combine and deduplicate
+    return list(set(watchlist_tickers) | set(portfolio_tickers))
 
 @router.websocket("/api/v1/ws/prices")
 async def websocket_prices(
@@ -59,6 +71,18 @@ async def websocket_prices(
                         "type": "price_update",
                         "data": prices
                     })
+                    
+                    # ── Alert Checking ─────────────────────────────────────
+                    # Convert to {ticker: price} dict for alert service
+                    price_map = {p["ticker"]: p["price"] for p in prices}
+                    alert_service = AlertService(db)
+                    triggered = await alert_service.check_alerts(price_map)
+                    
+                    for alert in triggered:
+                        await websocket.send_json({
+                            "type": "alert_triggered",
+                            "data": alert.model_dump()
+                        })
             else:
                 # Send heartbeat so client knows connection is alive
                 await websocket.send_json({"type": "heartbeat"})

@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { getPortfolio, addTransaction, getTransactions } from '../services/watchlistApi';
+import AllocationChart from './AllocationChart';
 
-export default function PortfolioPanel() {
+export default function PortfolioPanel({ priceData }) {
   const [portfolio, setPortfolio] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -59,6 +60,38 @@ export default function PortfolioPanel() {
     }
   };
 
+  const isEmpty = !portfolio || portfolio.holdings_count === 0;
+  
+  // ── Live Calculation Engine ─────────────────────────────────────
+  const liveData = useMemo(() => {
+    if (!portfolio || !portfolio.holdings) return { holdings: [], totalValue: 0, totalPnl: 0, totalPnlPercent: 0 };
+    
+    let totalValue = 0;
+    const holdings = portfolio.holdings.map(h => {
+      const livePrice = priceData[h.ticker]?.price;
+      const currentPrice = livePrice !== undefined ? livePrice : (h.current_value / h.total_shares);
+      const marketValue = h.total_shares * currentPrice;
+      totalValue += marketValue;
+      
+      const unrealizedPnl = marketValue - h.total_invested;
+      const pnlPercent = h.total_invested !== 0 ? (unrealizedPnl / h.total_invested) * 100 : 0;
+      
+      return {
+        ...h,
+        current_price: currentPrice,
+        market_value: marketValue,
+        unrealized_pnl: unrealizedPnl,
+        unrealized_pnl_percent: pnlPercent,
+        isLive: livePrice !== undefined
+      };
+    });
+    
+    const totalPnl = totalValue - portfolio.total_invested;
+    const totalPnlPercent = portfolio.total_invested !== 0 ? (totalPnl / portfolio.total_invested) * 100 : 0;
+    
+    return { holdings, totalValue, totalPnl, totalPnlPercent };
+  }, [portfolio, priceData]);
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -68,40 +101,39 @@ export default function PortfolioPanel() {
     );
   }
 
-  const isEmpty = !portfolio || portfolio.holdings_count === 0;
-
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
       {/* ── Summary Metrics ─────────────────────────────────── */}
       {!isEmpty && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-bg-surface border border-border-subtle p-6 rounded-2xl hover:border-accent/30 transition-all group">
+          <div className="bg-bg-surface border border-border-subtle p-6 rounded-2xl hover:border-accent/30 transition-all group relative overflow-hidden">
             <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-2">Portfolio Value</p>
             <p className="text-3xl font-black tracking-tighter text-text-primary group-hover:text-accent transition-colors">
-              ${portfolio.current_value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ${liveData.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
-            <p className="text-[10px] font-bold text-text-muted mt-2">Marked to Market</p>
+            <div className="flex items-center gap-2 mt-2">
+               <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse shadow-[0_0_8px_rgba(47,129,247,0.6)]" />
+               <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest opacity-60">Live Terminal Sync</p>
+            </div>
+            <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-accent/5 rounded-full blur-2xl" />
           </div>
           
           <div className="bg-bg-surface border border-border-subtle p-6 rounded-2xl hover:border-accent/30 transition-all group">
             <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-2">Lifetime P&L</p>
             <div className="flex items-end gap-3">
-              <p className={`text-3xl font-black tracking-tighter ${portfolio.total_pnl >= 0 ? 'text-positive' : 'text-negative'}`}>
-                {portfolio.total_pnl >= 0 ? '+' : ''}${Math.abs(portfolio.total_pnl).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              <p className={`text-3xl font-black tracking-tighter ${liveData.totalPnl >= 0 ? 'text-positive' : 'text-negative'}`}>
+                {liveData.totalPnl >= 0 ? '+' : ''}${Math.abs(liveData.totalPnl).toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </p>
-              <span className={`mb-1 px-2 py-0.5 rounded-lg text-[10px] font-black ${portfolio.total_pnl >= 0 ? 'bg-positive/10 text-positive' : 'bg-negative/10 text-negative'}`}>
-                {portfolio.total_pnl >= 0 ? '↑' : '↓'} {Math.abs(portfolio.total_pnl_percent).toFixed(2)}%
+              <span className={`mb-1 px-2 py-0.5 rounded-lg text-[10px] font-black ${liveData.totalPnl >= 0 ? 'bg-positive/10 text-positive' : 'bg-negative/10 text-negative'}`}>
+                {liveData.totalPnl >= 0 ? '↑' : '↓'} {Math.abs(liveData.totalPnlPercent).toFixed(2)}%
               </span>
             </div>
-            <p className="text-[10px] font-bold text-text-muted mt-2">Invested: ${portfolio.total_invested.toLocaleString()}</p>
+            <p className="text-[10px] font-bold text-text-muted mt-2 uppercase tracking-tighter opacity-60">Invested Principle: ${portfolio.total_invested.toLocaleString()}</p>
           </div>
 
-          <div className="bg-bg-surface border border-border-subtle p-6 rounded-2xl hover:border-accent/30 transition-all group">
-            <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-2">Total Holdings</p>
-            <p className="text-3xl font-black tracking-tighter text-text-primary">{portfolio.holdings_count}</p>
-            <div className="flex gap-2 mt-2">
-               <button onClick={loadHistory} className="text-[10px] font-black text-accent uppercase tracking-widest hover:underline">View Ledger 📜</button>
-            </div>
+          <div className="md:col-span-1 bg-bg-surface border border-border-subtle p-6 rounded-2xl hover:border-accent/30 transition-all flex flex-col items-center justify-center">
+            <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-4">Capital Allocation</p>
+            <AllocationChart holdings={liveData.holdings} />
           </div>
         </div>
       )}
@@ -196,35 +228,40 @@ export default function PortfolioPanel() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle/50">
-              {portfolio.holdings.map((h) => (
+              {liveData.holdings.map((h) => (
                 <tr key={h.ticker} className="hover:bg-bg-surface-elevated transition-colors group">
                   <td className="px-6 py-5">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-black tracking-tight group-hover:text-accent transition-colors">{h.ticker}</span>
-                      <span className="text-[10px] font-bold text-text-muted uppercase truncate max-w-[150px]">{h.company_name}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-black tracking-tight group-hover:text-accent transition-colors">{h.ticker}</span>
+                          {h.isLive && <div className="w-1 h-1 rounded-full bg-accent shadow-[0_0_4px_rgba(47,129,247,0.8)]" title="Streaming Live" />}
+                        </div>
+                        <span className="text-[10px] font-bold text-text-muted uppercase truncate max-w-[150px]">{h.company_name}</span>
+                      </div>
                     </div>
                   </td>
-                  <td className="px-6 py-5 text-right font-bold text-sm">{h.total_shares.toFixed(2)}</td>
-                  <td className="px-6 py-5 text-right font-black text-sm text-text-primary">
-                    ${h.current_value.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  <td className="px-6 py-5 text-right font-bold text-sm tracking-tighter">{h.total_shares.toFixed(h.total_shares % 1 === 0 ? 0 : 2)}</td>
+                  <td className="px-6 py-5 text-right font-black text-sm text-text-primary tabular-nums">
+                    ${h.market_value.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </td>
                   <td className="px-6 py-5 text-right">
                     <div className="flex flex-col items-end">
-                      <span className={`text-sm font-black ${h.unrealized_pnl >= 0 ? 'text-positive' : 'text-negative'}`}>
-                        {h.unrealized_pnl >= 0 ? '+' : ''}${Math.abs(h.unrealized_pnl).toFixed(2)}
+                      <span className={`text-sm font-black tabular-nums transition-colors ${h.unrealized_pnl >= 0 ? 'text-positive' : 'text-negative'}`}>
+                        {h.unrealized_pnl >= 0 ? '+' : ''}${Math.abs(h.unrealized_pnl).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </span>
-                      <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest leading-none">
+                      <span className={`text-[9px] font-bold uppercase tracking-widest leading-none ${h.unrealized_pnl >= 0 ? 'text-positive/70' : 'text-negative/70'}`}>
                         {h.unrealized_pnl_percent >= 0 ? '+' : ''}{h.unrealized_pnl_percent.toFixed(1)}%
                       </span>
                     </div>
                   </td>
                   <td className="px-6 py-5 text-right">
-                     <div className="inline-flex items-center gap-3">
-                        <div className="w-20 h-1 bg-bg-main rounded-full overflow-hidden">
-                           <div className="h-full bg-accent" style={{ width: `${h.allocation_percent}%` }} />
+                    <div className="inline-flex items-center justify-end gap-3 min-w-[120px]">
+                        <div className="w-16 h-1 bg-border-subtle/30 rounded-full overflow-hidden">
+                           <div className="h-full bg-accent shadow-[0_0_8px_rgba(47,129,247,0.4)]" style={{ width: `${(h.market_value / liveData.totalValue * 100) || 0}%` }} />
                         </div>
-                        <span className="text-[10px] font-black text-text-muted min-w-[30px]">{h.allocation_percent.toFixed(1)}%</span>
-                     </div>
+                        <span className="text-[10px] font-black text-text-muted min-w-[30px] tabular-nums">{((h.market_value / liveData.totalValue * 100) || 0).toFixed(1)}%</span>
+                    </div>
                   </td>
                 </tr>
               ))}
