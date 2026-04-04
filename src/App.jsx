@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import Header from './components/Header';
 import SearchBar from './components/SearchBar';
-import WatchlistTable from './components/WatchlistTable';
+import WatchlistGrid from './components/WatchlistGrid';
 import EmptyState from './components/EmptyState';
 import AuthModal from './components/AuthModal';
 import StockDetail from './components/StockDetail';
@@ -11,177 +10,204 @@ import { useAuth } from './hooks/useAuth';
 import { useStockWebSocket } from './hooks/useStockWebSocket';
 import { useWatchlist } from './hooks/useWatchlist';
 import { exportWatchlistCSV } from './services/watchlistApi';
-import './App.css';
 
-/**
- * Check if US stock market is currently open.
- * Market hours: Mon-Fri, 9:30 AM - 4:00 PM ET
- */
 function isMarketOpen() {
-  // Hardcoded to true for demo purposes
-  return true;
+  return true; // Demo purposes
 }
 
 export default function App() {
-  console.log("API URL (App):", import.meta.env.VITE_API_URL);
-
-  // Wake up backend on load (Render cold start)
-  useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'https://tickervault-api.onrender.com';
-    fetch(`${apiUrl}/health`, { method: "GET" })
-      .catch(() => {}); // silent — just wakes Render from sleep
-  }, []);
-
   const { isAuthenticated, isLoading: authLoading, user, logout } = useAuth();
-  const { watchlist, stockData, addTicker, removeTicker, isLoading } = useWatchlist();
-
-  const [activeView, setActiveView] = useState('watchlist'); // 'watchlist' | 'portfolio'
+  const { watchlist, stockData, addTicker, removeTicker, isLoading: watchlistLoading } = useWatchlist();
+  
+  const [activeView, setActiveView] = useState('watchlist');
   const [selectedTicker, setSelectedTicker] = useState(null);
   const [showAlerts, setShowAlerts] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Mobile toggle
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Extract ticker symbols for WebSocket
+  useEffect(() => {
+    if (!selectedTicker && activeView === 'detail') {
+      setActiveView('watchlist');
+    }
+  }, [selectedTicker, activeView]);
+
   const tickers = useMemo(() => watchlist.map((w) => w.ticker), [watchlist]);
-
-  // Connect to backend WebSocket
-  const { priceData, connectionStatus } = useStockWebSocket(
-    isAuthenticated ? tickers : []
-  );
-
+  const { priceData, connectionStatus } = useStockWebSocket(isAuthenticated ? tickers : []);
   const marketOpen = isMarketOpen();
 
-  // Show loading spinner while checking auth
   if (authLoading) {
     return (
-      <div className="app-auth-loading">
-        <div className="loading-spinner"></div>
-        <p>Loading TickerVault...</p>
+      <div className="min-h-screen bg-bg-main flex flex-col items-center justify-center gap-6 animate-in fade-in duration-700">
+        <div className="relative">
+          <div className="w-12 h-12 border-4 border-accent/10 border-t-accent rounded-full animate-spin" />
+          <div className="absolute inset-0 bg-accent/20 blur-2xl animate-pulse rounded-full" />
+        </div>
+        <div className="text-center space-y-2">
+          <h3 className="text-sm font-black text-text-primary uppercase tracking-[0.3em]">TickerVault</h3>
+          <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] italic">Initializing Secure Terminal</p>
+        </div>
       </div>
     );
   }
 
-  // Show auth modal if not logged in
-  if (!isAuthenticated) {
-    return <AuthModal />;
-  }
+  if (!isAuthenticated) return <AuthModal />;
+
+  const handleTickerSelect = (ticker) => {
+    setSelectedTicker(ticker);
+    setActiveView('detail');
+  };
 
   return (
-    <div className={`app-canvas ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-      {/* ── Sidebar Navigation ───────────────────────────────────────────── */}
-      <aside className={`sidebar glass ${isMobileMenuOpen ? 'visible' : ''}`}>
-        <div className="sidebar-brand">
-          <div className="brand-logo">TV</div>
-          <h2 className="brand-name">TickerVault</h2>
-          <button className="mobile-close-btn" onClick={() => setIsMobileMenuOpen(false)}>✕</button>
+    <div className="flex min-h-screen bg-bg-main text-text-primary font-sans selection:bg-accent/30">
+      {/* ── Sidebar Navigation ─────────────────────────────────────────── */}
+      <aside className={`fixed inset-y-0 left-0 w-[260px] bg-bg-surface border-r border-border-subtle flex flex-col z-50 transform transition-all duration-500 ease-in-out lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
+        {/* Brand Container */}
+        <div className="h-20 flex items-center px-8 border-b border-border-subtle group">
+          <div className="w-8 h-8 bg-gradient-to-br from-accent to-purple-600 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-accent/20 group-hover:scale-105 transition-transform">
+             <svg className="w-5 h-5 text-[#fff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+             </svg>
+          </div>
+          <span className="text-sm font-black uppercase tracking-[0.3em] overflow-hidden whitespace-nowrap">
+            Ticker<span className="text-accent underline decoration-accent/30 underline-offset-4">Vault</span>
+          </span>
+          <button className="ml-auto lg:hidden text-text-muted hover:text-text-primary" onClick={() => setIsMobileMenuOpen(false)}>✕</button>
         </div>
 
-        <nav className="sidebar-nav">
-          <button 
-            className={`nav-item ${activeView === 'watchlist' ? 'active' : ''}`}
-            onClick={() => { setActiveView('watchlist'); setIsMobileMenuOpen(false); }}
-          >
-            <span className="nav-icon">📊</span>
-            <span className="nav-label">Watchlist</span>
-          </button>
-          <button 
-            className={`nav-item ${activeView === 'portfolio' ? 'active' : ''}`}
-            onClick={() => { setActiveView('portfolio'); setIsMobileMenuOpen(false); }}
-          >
-            <span className="nav-icon">💼</span>
-            <span className="nav-label">Portfolio</span>
-          </button>
-          <button 
-            className={`nav-item ${showAlerts ? 'active' : ''}`}
+        {/* Global Navigation */}
+        <nav className="flex-1 py-8 px-4 space-y-2 overflow-y-auto">
+          {[
+            { id: 'watchlist', label: 'Monitor', icon: '📊' },
+            { id: 'portfolio', label: 'Holdings', icon: '💼' },
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => { setActiveView(item.id); setSelectedTicker(null); setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-4 px-5 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all relative group overflow-hidden ${activeView === item.id || (item.id === 'watchlist' && activeView === 'detail') ? 'bg-bg-surface-elevated text-accent border border-border-subtle shadow-md shadow-black/20' : 'text-text-muted hover:text-text-primary hover:bg-bg-surface-elevated/40'}`}
+            >
+              <span className="text-base group-hover:scale-110 transition-transform">{item.icon}</span>
+              {item.label}
+              {(activeView === item.id || (item.id === 'watchlist' && activeView === 'detail')) && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-accent rounded-r-full shadow-[0_0_8px_rgba(47,129,247,0.6)]" />}
+            </button>
+          ))}
+          
+          <div className="pt-4 pb-2 px-5">
+             <span className="text-[9px] font-black text-text-muted uppercase tracking-[0.3em] opacity-40">Systems</span>
+          </div>
+
+          <button
             onClick={() => { setShowAlerts(true); setIsMobileMenuOpen(false); }}
+            className="w-full flex items-center gap-4 px-5 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] text-text-muted hover:text-accent hover:bg-accent/5 transition-all group"
           >
-            <span className="nav-icon">🔔</span>
-            <span className="nav-label">Alerts</span>
+            <span className="text-base group-hover:animate-bounce">🔔</span>
+            Price Triggers
           </button>
         </nav>
 
-        <div className="sidebar-footer">
-          <div className="user-profile">
-            <div className="user-avatar">{user?.username?.[0]?.toUpperCase() || 'U'}</div>
-            <div className="user-info">
-              <p className="user-name">{user?.username || 'User'}</p>
-              <p className="user-status">Online</p>
+        {/* Terminal Operator Panel */}
+        <div className="p-6 border-t border-border-subtle bg-bg-surface-elevated/30">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="relative">
+                <div className="w-10 h-10 rounded-xl bg-accent text-[#fff] flex items-center justify-center text-xs font-black shadow-lg shadow-accent/20">
+                    {user?.username?.[0]?.toUpperCase()}
+                </div>
+                <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-bg-surface ${connectionStatus === 'connected' ? 'bg-positive' : 'bg-negative'}`} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-black text-text-primary uppercase tracking-widest truncate">{user?.username}</p>
+              <p className="text-[9px] font-bold text-text-muted uppercase tracking-tighter truncate opacity-60">Session active</p>
             </div>
           </div>
-          <button className="logout-btn" onClick={logout}>
-            <span>Log Out</span>
-            <span className="logout-icon">↵</span>
+          <button 
+            onClick={logout}
+            className="w-full h-10 flex items-center justify-center gap-2 bg-negative/5 hover:bg-negative/10 border border-negative/20 text-negative/70 hover:text-negative rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+          >
+            Terminate Interface
           </button>
         </div>
       </aside>
 
-      {/* ── Main Content Area ───────────────────────────────────────────── */}
-      <main className="app-viewport">
-        <header className="viewport-header">
-          <button className="mobile-menu-toggle" onClick={() => setIsMobileMenuOpen(true)}>
-            ☰
-          </button>
-          <div className="header-left">
-            <h1 className="welcome-msg">Good morning, {user?.username || 'Trader'} 👋</h1>
-            <div className="status-indicator">
-              <span className={`status-dot ${connectionStatus === 'connected' ? 'online' : 'offline'}`}></span>
-              <span className="status-text">{connectionStatus === 'connected' ? 'Live Stream' : 'Offline'}</span>
+      {/* ── Main Viewport ────────────────────────────────────────────── */}
+      <main className="flex-1 lg:ml-[260px] min-h-screen flex flex-col relative">
+        {/* Dashboard Header */}
+        <header className="h-20 sticky top-0 bg-bg-main/70 backdrop-blur-3xl border-b border-border-subtle flex items-center justify-between px-8 z-[40]">
+          <div className="flex items-center gap-6">
+            <button className="lg:hidden p-2 text-2xl" onClick={() => setIsMobileMenuOpen(true)}>☰</button>
+            <div className="animate-in fade-in slide-in-from-left-4 duration-500">
+               <p className="text-[10px] font-black text-accent uppercase tracking-[0.3em] mb-1">Terminal</p>
+               <h2 className="text-xl font-black tracking-tight text-text-primary uppercase italic">
+                {activeView === 'detail' ? `${selectedTicker}` : activeView === 'portfolio' ? 'Asset Ledger' : 'Global Monitor'}
+               </h2>
             </div>
           </div>
-          
-          <div className="header-right">
+
+          <div className="flex items-center gap-6">
             <SearchBar onAddTicker={addTicker} watchlist={watchlist} />
-            <button className="export-btn-minimal" onClick={exportWatchlistCSV} title="Export CSV">
+            <button 
+              onClick={exportWatchlistCSV}
+              className="h-11 w-11 flex items-center justify-center bg-bg-surface-elevated border border-border-subtle rounded-xl text-lg hover:border-accent/50 hover:text-accent transition-all shadow-lg shadow-black/20"
+              title="Export Terminal Flux"
+            >
               📥
             </button>
           </div>
         </header>
 
-        <div className="viewport-content">
-          {/* Market Status Banner */}
-          <div className={`market-status-pills ${marketOpen ? 'open' : 'closed'}`}>
-             <span className="pill-dot"></span>
-             {marketOpen ? 'Market Open' : 'Market Closed'}
-          </div>
-
-          {/* Dynamic Views */}
-          {activeView === 'watchlist' ? (
-            <div className="watchlist-view">
-              {isLoading && (
-                <div className="view-loading">
-                  <div className="loading-spinner"></div>
-                  <span>Syncing watchlist...</span>
+        {/* Dynamic Viewport Container */}
+        <section className="flex-1 p-8 lg:p-12 overflow-x-hidden">
+          <div className="max-w-[1400px] mx-auto">
+            {/* Context Breadcrumbs / Status */}
+            {activeView !== 'detail' && (
+              <div className="mb-10 flex items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-700">
+                <div className="px-4 py-1.5 bg-bg-surface border border-border-subtle rounded-full flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full ${marketOpen ? 'bg-positive shadow-[0_0_8px_rgba(63,185,80,0.6)]' : 'bg-negative animate-pulse'}`} />
+                    <span className="text-[9px] font-black text-text-muted uppercase tracking-[0.2em]">
+                        {marketOpen ? 'Market Active' : 'Exchange Closed'}
+                    </span>
+                    <span className="w-px h-2.5 bg-border-subtle" />
+                    <span className="text-[9px] font-bold text-text-muted uppercase opacity-60">Ticker Feed v4.2</span>
                 </div>
-              )}
+              </div>
+            )}
 
-              {watchlist.length > 0 ? (
-                <WatchlistTable
-                  watchlist={watchlist}
-                  stockData={stockData}
-                  priceData={priceData}
-                  onRemove={removeTicker}
-                  onRowClick={setSelectedTicker}
+            {/* View Transitions */}
+            <div className="relative">
+                {activeView === 'watchlist' ? (
+                <WatchlistGrid
+                    watchlist={watchlist}
+                    stockData={stockData}
+                    priceData={priceData}
+                    onRemove={removeTicker}
+                    onSelect={handleTickerSelect}
+                    isLoading={watchlistLoading}
                 />
-              ) : (
-                !isLoading && <EmptyState />
-              )}
+                ) : activeView === 'portfolio' ? (
+                <PortfolioPanel />
+                ) : (
+                <StockDetail
+                    ticker={selectedTicker}
+                    onClose={() => setSelectedTicker(null)}
+                />
+                )}
             </div>
-          ) : (
-            <PortfolioPanel />
-          )}
-        </div>
+          </div>
+        </section>
 
-        <footer className="view-footer">
-          <p>© 2026 TickerVault · Modern High-Precision Trading Environment</p>
+        {/* Interface Footer */}
+        <footer className="py-10 px-8 border-t border-border-subtle/30 bg-bg-main">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 max-w-[1400px] mx-auto">
+             <p className="text-[9px] font-black text-text-muted uppercase tracking-[0.3em] opacity-40">
+                © 2026 TickerVault Engineering · All protocols secured
+             </p>
+             <div className="flex gap-8 text-[9px] font-black text-text-muted uppercase tracking-widest">
+                <span className="hover:text-accent cursor-pointer transition-colors">API Docs</span>
+                <span className="hover:text-accent cursor-pointer transition-colors">Infrastructure</span>
+                <span className="hover:text-accent cursor-pointer transition-colors">Compliance</span>
+             </div>
+          </div>
         </footer>
       </main>
 
-      {/* Overlays */}
-      {selectedTicker && (
-        <StockDetail
-          ticker={selectedTicker}
-          onClose={() => setSelectedTicker(null)}
-        />
-      )}
+      {/* Global Overlays */}
       <AlertPanel isOpen={showAlerts} onClose={() => setShowAlerts(false)} />
     </div>
   );

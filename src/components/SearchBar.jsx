@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { searchTickers } from '../services/stockApi';
-import './SearchBar.css';
 
 export default function SearchBar({ onAddTicker, watchlist }) {
   const [query, setQuery] = useState('');
@@ -23,22 +22,23 @@ export default function SearchBar({ onAddTicker, watchlist }) {
     }
 
     setIsLoading(true);
-    const data = await searchTickers(searchQuery);
-    setResults(data);
-    setIsOpen(data.length > 0);
-    setIsLoading(false);
-    setActiveIndex(-1);
+    try {
+      const data = await searchTickers(searchQuery);
+      setResults(data);
+      setIsOpen(data.length > 0);
+    } catch (err) {
+      console.error('Search failed:', err);
+    } finally {
+      setIsLoading(false);
+      setActiveIndex(-1);
+    }
   }, []);
 
   const handleInputChange = (e) => {
     const value = e.target.value;
     setQuery(value);
-
     if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    debounceRef.current = setTimeout(() => {
-      doSearch(value);
-    }, 300);
+    debounceRef.current = setTimeout(() => doSearch(value), 300);
   };
 
   const handleSelect = (ticker) => {
@@ -46,12 +46,10 @@ export default function SearchBar({ onAddTicker, watchlist }) {
     setQuery('');
     setResults([]);
     setIsOpen(false);
-    inputRef.current?.focus();
   };
 
   const handleKeyDown = (e) => {
     if (!isOpen) return;
-
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
@@ -63,25 +61,17 @@ export default function SearchBar({ onAddTicker, watchlist }) {
         break;
       case 'Enter':
         e.preventDefault();
-        if (activeIndex >= 0 && activeIndex < results.length) {
-          handleSelect(results[activeIndex]);
-        }
+        if (activeIndex >= 0 && activeIndex < results.length) handleSelect(results[activeIndex]);
         break;
       case 'Escape':
         setIsOpen(false);
-        setActiveIndex(-1);
         break;
     }
   };
 
-  // Click outside to close
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target) &&
-        !inputRef.current.contains(e.target)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target) && !inputRef.current.contains(e.target)) {
         setIsOpen(false);
       }
     };
@@ -89,71 +79,79 @@ export default function SearchBar({ onAddTicker, watchlist }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Cleanup debounce
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
-
   return (
-    <div className="modern-search-box">
-      <div className="search-field-wrap glass">
-        <svg className="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <circle cx="11" cy="11" r="8" />
-          <path d="M21 21l-4.35-4.35" />
-        </svg>
+    <div className="relative w-full max-w-[320px]">
+      <div className="relative group">
+        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+          <svg className="w-4 h-4 text-text-muted group-focus-within:text-accent transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
+        </div>
+        
         <input
           ref={inputRef}
           type="text"
-          className="search-input-field"
-          placeholder="Search markets..."
+          className="w-full h-11 pl-12 pr-10 bg-bg-surface border border-border-subtle rounded-xl text-sm font-bold placeholder:text-text-muted focus-ring"
+          placeholder="Search global assets..."
           value={query}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           autoComplete="off"
         />
-        {isLoading && <div className="spinner-sm"></div>}
+
+        {isLoading && (
+          <div className="absolute inset-y-0 right-4 flex items-center">
+            <div className="w-4 h-4 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
+          </div>
+        )}
+
         {query && !isLoading && (
-          <button className="clear-search-btn" onClick={() => { setQuery(''); setResults([]); setIsOpen(false); }}>
+          <button 
+            onClick={() => { setQuery(''); setResults([]); setIsOpen(false); }}
+            className="absolute inset-y-0 right-4 flex items-center text-text-muted hover:text-text-primary transition-colors"
+          >
             ✕
           </button>
         )}
       </div>
 
       {isOpen && (
-        <div className="search-results-popover glass" ref={dropdownRef}>
-          {results.length > 0 ? (
-            results.map((ticker, index) => {
+        <div 
+          ref={dropdownRef}
+          className="absolute top-14 left-0 w-full bg-bg-surface border border-border-subtle rounded-2xl shadow-2xl overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200"
+        >
+          <div className="max-h-[360px] overflow-y-auto">
+            {results.map((ticker, index) => {
               const isWatched = watchedTickers.has(ticker.ticker);
               return (
-                <div
+                <button
                   key={ticker.ticker}
-                  className={`suggestion-item ${index === activeIndex ? 'active' : ''} ${isWatched ? 'watched' : ''}`}
+                  className={`w-full flex items-center justify-between px-5 py-4 border-b border-border-subtle/50 transition-all text-left ${index === activeIndex ? 'bg-bg-surface-elevated text-accent' : 'hover:bg-bg-surface-elevated/50'}`}
                   onClick={() => !isWatched && handleSelect(ticker)}
                   onMouseEnter={() => setActiveIndex(index)}
+                  disabled={isWatched}
                 >
-                  <div className="sug-left">
-                    <span className="sug-ticker">{ticker.ticker}</span>
-                    <span className="sug-name">{ticker.name}</span>
+                  <div className="flex flex-col gap-0.5">
+                    <span className={`text-sm font-black tracking-tight ${index === activeIndex ? 'text-accent' : 'text-text-primary'}`}>
+                      {ticker.ticker}
+                    </span>
+                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider truncate max-w-[150px]">
+                      {ticker.name}
+                    </span>
                   </div>
-                  <div className="sug-right">
-                     {isWatched ? (
-                       <span className="sug-badge watched">Watching</span>
-                     ) : (
-                       <span className="sug-badge add">+ Add</span>
-                     )}
-                  </div>
-                </div>
+                  
+                  {isWatched ? (
+                    <span className="text-[10px] font-black uppercase tracking-widest text-positive/60">Watched</span>
+                  ) : (
+                    <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg ${index === activeIndex ? 'bg-accent/10 text-accent' : 'bg-bg-main text-text-muted'}`}>
+                      + Add
+                    </span>
+                  )}
+                </button>
               );
-            })
-          ) : (
-            !isLoading && query.length > 0 && (
-              <div className="search-no-results">
-                <span>No tickers found for "{query}"</span>
-              </div>
-            )
-          )}
+            })}
+          </div>
         </div>
       )}
     </div>
