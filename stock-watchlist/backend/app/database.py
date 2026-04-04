@@ -30,19 +30,27 @@ elif db_url.startswith("postgres://"):
 if "?pgbouncer=true" in db_url:
     db_url = db_url.replace("?pgbouncer=true", "")
 
-engine = create_async_engine(
-    db_url,
-    echo=False,
-    pool_size=5,
-    max_overflow=10,
-    pool_pre_ping=True,        # Test connection before using it
-    pool_recycle=300,          # Recycle connections every 5 minutes
-    connect_args={
+# Prepare engine arguments
+engine_kwargs = {
+    "echo": False,
+    "pool_pre_ping": True,
+    "pool_recycle": 300,
+}
+
+# Only add pool_size/max_overflow for pooling-capable drivers (not SQLite)
+if not db_url.startswith("sqlite"):
+    engine_kwargs["pool_size"] = 5
+    engine_kwargs["max_overflow"] = 10
+
+# Only add server_settings for PostgreSQL/asyncpg
+if "postgresql" in db_url or "postgres" in db_url:
+    engine_kwargs["connect_args"] = {
         "server_settings": {
             "application_name": "tickervault"
         }
     }
-)
+
+engine = create_async_engine(db_url, **engine_kwargs)
 
 async_session_factory = async_sessionmaker(
     engine,

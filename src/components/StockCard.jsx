@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 
 export default function StockCard({ ticker, data, price, onRemove, onSelect }) {
-  const currentPrice = price?.p || 0;
-  const prevClose = data?.previousClose || currentPrice;
+  const currentPrice = typeof price === 'object' ? (price?.price || price?.p || 0) : (price || 0);
+  const prevClose = data?.previous_close || data?.previousClose || currentPrice;
   const change = currentPrice - prevClose;
   const changePct = prevClose !== 0 ? (change / prevClose) * 100 : 0;
   

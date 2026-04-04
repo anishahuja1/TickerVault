@@ -460,7 +460,7 @@ def get_stock_price(ticker: str) -> dict:
             "ticker":         ticker.upper(),
             "name":           name,
             "price":          price,
-            "prev_close":     prev_close,
+            "previous_close": prev_close,
             "change":         change,
             "change_percent": change_pct,
             "open":           open_price,

@@ -17,7 +17,7 @@ function isMarketOpen() {
 
 export default function App() {
   const { isAuthenticated, isLoading: authLoading, user, logout } = useAuth();
-  const { watchlist, stockData, addTicker, removeTicker, isLoading: watchlistLoading } = useWatchlist();
+  const { watchlist, stockData, addTicker, removeTicker, isLoading: watchlistLoading, error: watchlistError } = useWatchlist();
   
   const [activeView, setActiveView] = useState('watchlist');
   const [selectedTicker, setSelectedTicker] = useState(null);
@@ -157,15 +157,23 @@ export default function App() {
           <div className="max-w-[1400px] mx-auto">
             {/* Context Breadcrumbs / Status */}
             {activeView !== 'detail' && (
-              <div className="mb-10 flex items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-700">
-                <div className="px-4 py-1.5 bg-bg-surface border border-border-subtle rounded-full flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${marketOpen ? 'bg-positive shadow-[0_0_8px_rgba(63,185,80,0.6)]' : 'bg-negative animate-pulse'}`} />
-                    <span className="text-[9px] font-black text-text-muted uppercase tracking-[0.2em]">
-                        {marketOpen ? 'Market Active' : 'Exchange Closed'}
-                    </span>
-                    <span className="w-px h-2.5 bg-border-subtle" />
-                    <span className="text-[9px] font-bold text-text-muted uppercase opacity-60">Ticker Feed v4.2</span>
+              <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-700">
+                <div className="flex items-center gap-4">
+                  <div className="px-4 py-1.5 bg-bg-surface border border-border-subtle rounded-full flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${marketOpen ? 'bg-positive shadow-[0_0_8px_rgba(63,185,80,0.6)]' : 'bg-negative animate-pulse'}`} />
+                      <span className="text-[9px] font-black text-text-muted uppercase tracking-[0.2em]">
+                          {marketOpen ? 'Market Active' : 'Exchange Closed'}
+                      </span>
+                      <span className="w-px h-2.5 bg-border-subtle" />
+                      <span className="text-[9px] font-bold text-text-muted uppercase opacity-60">Ticker Feed v4.2</span>
+                  </div>
                 </div>
+
+                {watchlistError && (
+                  <div className="px-4 py-1.5 bg-negative/5 border border-negative/20 rounded-full flex items-center gap-3 animate-pulse">
+                    <span className="text-[10px] font-black text-negative uppercase tracking-widest">⚠️ Terminal Sync Offset: {watchlistError}</span>
+                  </div>
+                )}
               </div>
             )}
 

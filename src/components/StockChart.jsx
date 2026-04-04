@@ -22,13 +22,25 @@ export default function StockChart({ ticker, onMetaUpdate }) {
 
   const sanitizeChartData = useCallback((data) => {
     if (!data || !data.dates || data.dates.length === 0) return [];
-    return data.dates.map((date, i) => ({
-      time: new Date(date).getTime() / 1000,
-      open: parseFloat(data.opens[i]),
-      high: parseFloat(data.highs[i]),
-      low: parseFloat(data.lows[i]),
-      close: parseFloat(data.closes[i]),
-    })).sort((a, b) => a.time - b.time);
+    return data.dates.map((date, i) => {
+      const time = new Date(date).getTime() / 1000;
+      const open = parseFloat(data.opens[i]);
+      const high = parseFloat(data.highs[i]);
+      const low = parseFloat(data.lows[i]);
+      const close = parseFloat(data.closes[i]);
+      
+      if (isNaN(time) || isNaN(open) || isNaN(high) || isNaN(low) || isNaN(close)) {
+        return null;
+      }
+
+      return {
+        time,
+        open,
+        high,
+        low,
+        close,
+      };
+    }).filter(p => p !== null).sort((a, b) => a.time - b.time);
   }, []);
 
   const fetchHistory = useCallback(async () => {

@@ -15,6 +15,7 @@ export function useWatchlist() {
   const [watchlist, setWatchlist] = useState([]);
   const [stockData, setStockData] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Fetch watchlist from backend on mount / auth change
   useEffect(() => {
@@ -44,25 +45,25 @@ export function useWatchlist() {
           for (const [ticker, quote] of Object.entries(quotes)) {
             mapped[ticker] = {
               ticker,
-              close: quote.previous_close,
-              open: quote.open,
-              high: quote.high,
-              low: quote.low,
-              volume: quote.volume,
-              price: quote.price,
-              change: quote.change,
-              change_percent: quote.change_percent,
+              previous_close: quote.previous_close || quote.prev_close || 0,
+              open: quote.open || 0,
+              high: quote.high || 0,
+              low: quote.low || 0,
+              volume: quote.volume || 0,
+              price: quote.price || 0,
+              change: quote.change || 0,
+              change_percent: quote.change_percent || 0,
             };
           }
           setStockData(mapped);
         }
       } catch (err) {
         if (err.name === 'AbortError') {
-          console.error('Server is starting up, please wait 30 seconds and try again.');
+          setError('Server is starting up, please wait...');
         } else if (err.message === 'Failed to fetch') {
-          console.error('Cannot connect to server. Check your internet connection.');
+          setError('Cannot connect to terminal. Check your internet connection or backend status.');
         } else {
-          console.error(err.message || 'Something went wrong. Please try again.');
+          setError(err.message || 'Something went wrong. Please try again.');
         }
       } finally {
         setIsLoading(false);
@@ -130,5 +131,5 @@ export function useWatchlist() {
     }
   }, [watchlist]);
 
-  return { watchlist, stockData, addTicker, removeTicker, isLoading };
+  return { watchlist, stockData, addTicker, removeTicker, isLoading, error };
 }

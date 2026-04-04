@@ -107,7 +107,7 @@ export default function StockDetail({ ticker, onClose }) {
                 { label: '52W High', value: `$${company?.val_high52?.toFixed(2)}` },
                 { label: '52W Low', value: `$${company?.val_low52?.toFixed(2)}` },
                 { label: 'Avg Vol', value: formatMarketCap(company?.avg_volume) },
-                { label: 'Last Close', value: `$${quote?.previous_close?.toFixed(2)}` },
+                { label: 'Last Close', value: `$${(quote?.previous_close || quote?.prev_close)?.toFixed(2) || '—'}` },
               ].map((stat, idx) => (
                 <div key={idx} className="bg-bg-surface border border-border-subtle p-4 rounded-xl hover:border-accent/30 transition-colors">
                   <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-1">{stat.label}</p>
