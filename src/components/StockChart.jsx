@@ -68,14 +68,11 @@ export default function StockChart({ ticker, onMetaUpdate }) {
 
   useEffect(() => { fetchHistory(); }, [fetchHistory]);
 
+  // ── Chart Lifecycle Management ──────────────────────────────────
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
-    if (chartRef.current) {
-      chartRef.current.remove();
-      chartRef.current = null;
-    }
-
+    // Initialize Chart
     const chart = createChart(chartContainerRef.current, {
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
@@ -111,25 +108,41 @@ export default function StockChart({ ticker, onMetaUpdate }) {
       wickDownColor: "#F85149",
     });
 
-    if (chartData.length > 0) {
-      candleSeries.setData(chartData);
-      chart.timeScale().fitContent();
-    }
-
     chartRef.current = chart;
     seriesRef.current = candleSeries;
 
     const handleResize = () => {
       if (chartContainerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth });
+        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
       }
     };
     window.addEventListener("resize", handleResize);
 
+    // Initial data if ready
+    if (chartData.length > 0) {
+      candleSeries.setData(chartData);
+      chart.timeScale().fitContent();
+    }
+
     return () => {
       window.removeEventListener("resize", handleResize);
-      if (chartRef.current) chartRef.current.remove();
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+      }
     };
+  }, []); // Only run on mount
+
+  // ── Data Update Hook ──────────────────────────────────────────
+  useEffect(() => {
+    if (seriesRef.current && chartRef.current && chartData.length > 0) {
+      try {
+        seriesRef.current.setData(chartData);
+        chartRef.current.timeScale().fitContent();
+      } catch (e) {
+        console.warn("Chart update suppressed: Instance likely disposed", e);
+      }
+    }
   }, [chartData]);
 
   return (
